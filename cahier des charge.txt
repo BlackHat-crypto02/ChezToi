@@ -1,0 +1,1637 @@
+CAHIER DES CHARGES FONCTIONNEL ET TECHNIQUE
+Conception et développement d'une plateforme de location immobilière
+1. PRÉSENTATION DU PROJET
+1.1. Contexte
+La recherche d'un logement à louer représente souvent un véritable défi pour les particuliers. Les informations disponibles sont parfois incomplètes, les annonces peuvent manquer de fiabilité et les visites physiques entraînent des déplacements qui ne sont pas toujours nécessaires.
+
+Du côté des propriétaires et des agences immobilières, la publication des annonces, la gestion des demandes, le suivi des locataires et la gestion des disponibilités peuvent également être difficiles à organiser.
+
+Le présent projet vise à mettre en place une plateforme numérique centralisée permettant de faciliter la location de logements et de moderniser les échanges entre les différents acteurs du secteur immobilier.
+
+La solution reposera sur deux composantes principales :
+
+Une application mobile développée avec Flutter (locataires, propriétaires, agences).
+
+Une interface web d'administration développée avec Django (administrateurs uniquement).
+
+Les deux composantes communiqueront avec un backend centralisé qui assurera la gestion des données, des utilisateurs, des annonces, des réservations et des autres services.
+
+1.2. Vision du projet
+Mettre à disposition une plateforme immobilière moderne permettant à toute personne de rechercher, découvrir, visiter virtuellement, réserver et louer un logement depuis son téléphone.
+
+La plateforme devra également permettre aux propriétaires et aux agences de gérer efficacement leurs biens immobiliers et leurs activités locatives, et aux administrateurs de superviser l'ensemble depuis une interface web dédiée.
+
+1.3. Objectifs généraux
+Faciliter la recherche de logements.
+
+Centraliser les annonces immobilières.
+
+Permettre aux propriétaires de publier et gérer leurs logements.
+
+Permettre aux agences de gérer plusieurs biens.
+
+Améliorer la visibilité des logements grâce à la géolocalisation.
+
+Intégrer une carte interactive.
+
+Proposer des visites virtuelles 360° et 3D.
+
+Simplifier les demandes de réservation.
+
+Permettre les échanges directs entre locataires et propriétaires.
+
+Renforcer la confiance grâce aux systèmes de vérification et d'évaluation.
+
+Donner aux administrateurs un contrôle complet sur la plateforme via une interface web dédiée.
+
+2. PÉRIMÈTRE DU PROJET
+2.1. Types de logements concernés
+La plateforme sera exclusivement consacrée à la location de logements habitables.
+
+Les catégories prévues sont :
+
+Maisons.
+
+Appartements.
+
+Studios.
+
+Chambres.
+
+Villas.
+
+Duplex.
+
+Les logements pourront être meublés ou non meublés.
+
+2.2. Durées de location
+La plateforme pourra prendre en charge :
+
+La location à la nuitée.
+
+La location à la semaine.
+
+La location au mois.
+
+La location à l'année.
+
+La durée proposée dépendra du type de logement et des conditions définies par son propriétaire.
+
+2.3. Plateformes concernées
+Composante	Technologie	Utilisateurs
+Application mobile	Flutter	Locataires, propriétaires, agences
+Administration web	Django	Administrateurs
+API centrale	Django REST Framework	Application mobile et administration web
+Base de données	PostgreSQL	Backend
+Géolocalisation	Google Maps + PostGIS	Mobile et web (admin)
+Visualisation 3D	Moteur compatible WebGL et mobile	Mobile et web (admin)
+3. ACTEURS ET RÔLES
+3.1. Locataire
+Le locataire est un utilisateur qui recherche un logement. Il utilise l'application mobile.
+
+Il pourra :
+
+Créer un compte.
+
+Compléter son profil.
+
+Rechercher un logement.
+
+Consulter les annonces.
+
+Ajouter des logements aux favoris.
+
+Comparer plusieurs logements.
+
+Consulter les visites virtuelles.
+
+Contacter les propriétaires.
+
+Effectuer des demandes de réservation.
+
+Consulter ses réservations.
+
+Recevoir des notifications.
+
+Consulter son historique.
+
+Publier des avis après une location.
+
+Signaler une annonce ou un utilisateur.
+
+3.2. Propriétaire
+Le propriétaire est une personne qui possède un ou plusieurs logements et souhaite les mettre en location. Il utilise l'application mobile.
+
+Il pourra :
+
+Créer un compte propriétaire.
+
+Compléter son profil.
+
+Soumettre des justificatifs de vérification.
+
+Publier un logement.
+
+Modifier ses annonces.
+
+Ajouter des photos et vidéos.
+
+Réaliser une capture destinée à une visite virtuelle 3D.
+
+Définir les tarifs.
+
+Définir les disponibilités.
+
+Recevoir des demandes de réservation.
+
+Accepter ou refuser les demandes.
+
+Communiquer avec les locataires.
+
+Consulter les statistiques de ses annonces.
+
+Gérer plusieurs logements.
+
+3.3. Agence immobilière
+Une agence pourra gérer plusieurs logements et plusieurs collaborateurs. Elle utilise l'application mobile.
+
+Elle pourra :
+
+Créer un compte professionnel.
+
+Renseigner les informations de l'agence.
+
+Ajouter des agents.
+
+Affecter des logements aux agents.
+
+Publier des annonces.
+
+Modifier et désactiver des annonces.
+
+Gérer les demandes de réservation.
+
+Communiquer avec les locataires.
+
+Consulter les statistiques de l'agence.
+
+Suivre les réservations.
+
+3.4. Administrateur
+L'administrateur assure la gestion quotidienne de la plateforme via l'interface web Django.
+
+Il pourra :
+
+Gérer les utilisateurs.
+
+Gérer les propriétaires.
+
+Gérer les agences.
+
+Valider les annonces.
+
+Suspendre des annonces.
+
+Gérer les réservations.
+
+Gérer les catégories.
+
+Gérer les équipements.
+
+Traiter les signalements.
+
+Traiter les litiges.
+
+Modérer les avis.
+
+Consulter les statistiques.
+
+4. FONCTIONNALITÉS DE L'APPLICATION MOBILE FLUTTER
+4.1. Authentification et inscription
+L'application devra intégrer un système complet d'authentification.
+
+Fonctionnalités :
+
+Inscription par numéro de téléphone.
+
+Inscription par adresse e-mail.
+
+Connexion par téléphone ou e-mail.
+
+Mot de passe sécurisé.
+
+Vérification du numéro par code OTP.
+
+Vérification de l'adresse e-mail.
+
+Réinitialisation du mot de passe.
+
+Déconnexion.
+
+Gestion des sessions.
+
+Modification du profil.
+
+Changement du mot de passe.
+
+Suppression du compte.
+
+Gestion des rôles.
+
+L'utilisateur pourra disposer d'un profil locataire et, s'il remplit les conditions nécessaires, d'un espace propriétaire.
+
+4.2. Page d'accueil
+La page d'accueil devra présenter une expérience simple et attractive.
+
+Elle devra afficher :
+
+Une barre de recherche.
+
+Des suggestions de localisation.
+
+Les catégories de logements.
+
+Les logements récemment publiés.
+
+Les logements populaires.
+
+Les logements recommandés.
+
+Les logements à proximité.
+
+Les logements vérifiés.
+
+Les logements disposant d'une visite virtuelle.
+
+Des promotions éventuelles.
+
+Des raccourcis vers les favoris et les réservations.
+
+Les contenus devront pouvoir être administrés depuis le tableau de bord web.
+
+4.3. Publication et gestion des logements
+Le propriétaire ou l'agence devra disposer d'un formulaire de publication structuré.
+
+A. Informations générales
+Titre du logement.
+
+Description détaillée.
+
+Type de logement.
+
+Statut meublé ou non meublé.
+
+Nombre de chambres.
+
+Nombre de salons.
+
+Nombre de salles de bain.
+
+Nombre de toilettes.
+
+Superficie en mètres carrés.
+
+Nombre d'étages du bâtiment.
+
+Étage du logement.
+
+Capacité d'accueil, si nécessaire.
+
+B. Équipements
+Le propriétaire pourra sélectionner les équipements disponibles :
+
+Climatisation.
+
+Ventilateur.
+
+Cuisine équipée.
+
+Parking.
+
+Garage.
+
+Piscine.
+
+Jardin.
+
+Balcon.
+
+Terrasse.
+
+Groupe électrogène.
+
+Accès à l'eau.
+
+Forage.
+
+Sécurité.
+
+Connexion Internet.
+
+Meubles.
+
+Buanderie.
+
+Chauffe-eau.
+
+Autres équipements.
+
+La liste devra être administrable afin de permettre l'ajout de nouveaux équipements.
+
+C. Informations financières
+Prix de location.
+
+Devise.
+
+Périodicité du prix.
+
+Montant de la caution.
+
+Montant de l'avance.
+
+Frais supplémentaires.
+
+Charges éventuelles.
+
+Conditions de paiement.
+
+Conditions d'annulation.
+
+D. Localisation
+Pays.
+
+Région.
+
+Ville.
+
+Commune.
+
+Quartier.
+
+Adresse.
+
+Coordonnées GPS.
+
+Position sur la carte.
+
+Le propriétaire pourra positionner son logement directement sur une carte.
+
+Pour des raisons de confidentialité, la plateforme pourra afficher une localisation approximative publiquement et réserver l'adresse exacte aux utilisateurs autorisés.
+
+E. Photos et vidéos
+Le propriétaire pourra :
+
+Ajouter plusieurs photos.
+
+Ajouter des vidéos.
+
+Choisir une photo principale.
+
+Réorganiser les médias.
+
+Supprimer un média.
+
+Remplacer une photo.
+
+Ajouter une légende aux médias.
+
+Une optimisation automatique des images sera prévue afin de réduire la consommation de données.
+
+F. Gestion de publication
+Les annonces pourront avoir les statuts suivants :
+
+Brouillon.
+
+En attente de validation.
+
+Publiée.
+
+Refusée.
+
+Suspendue.
+
+Louée.
+
+Archivée.
+
+Le propriétaire pourra consulter le motif d'un refus et corriger son annonce avant de la soumettre à nouveau.
+
+4.4. Recherche avancée
+Le moteur de recherche devra permettre de retrouver un logement selon plusieurs critères.
+
+Filtres :
+
+Ville.
+
+Commune.
+
+Quartier.
+
+Type de logement.
+
+Budget minimum.
+
+Budget maximum.
+
+Nombre de chambres.
+
+Nombre de salles de bain.
+
+Superficie.
+
+Meublé ou non meublé.
+
+Équipements.
+
+Durée de location.
+
+Disponibilité.
+
+Annonces vérifiées.
+
+Présence d'une visite virtuelle.
+
+Options de tri :
+
+Prix croissant.
+
+Prix décroissant.
+
+Date de publication.
+
+Popularité.
+
+Proximité.
+
+Pertinence.
+
+Fonctionnalités complémentaires :
+
+Suggestions de recherche.
+
+Recherche par mots-clés.
+
+Historique des recherches.
+
+Enregistrement des recherches.
+
+Chargement progressif des résultats.
+
+4.5. Cartographie et géolocalisation
+Une carte interactive basée sur Google Maps sera intégrée à l'application.
+
+Fonctionnalités :
+
+Affichage des logements sur une carte.
+
+Marqueurs personnalisés.
+
+Affichage du prix sur les marqueurs.
+
+Localisation de l'utilisateur avec autorisation.
+
+Recherche autour de la position actuelle.
+
+Recherche par zone géographique.
+
+Recherche en déplaçant la carte.
+
+Regroupement des marqueurs proches.
+
+Aperçu d'un logement au clic.
+
+Ouverture de la fiche du logement.
+
+Calcul d'itinéraire.
+
+Affichage de la distance.
+
+Synchronisation entre la carte et les résultats de recherche.
+
+L'application devra gérer le refus de l'autorisation de géolocalisation et permettre une recherche manuelle par ville ou quartier.
+
+4.6. Fiche détaillée du logement
+Chaque logement disposera d'une page détaillée présentant :
+
+Titre.
+
+Photos.
+
+Vidéos.
+
+Prix.
+
+Localisation.
+
+Description.
+
+Superficie.
+
+Nombre de chambres.
+
+Nombre de salles de bain.
+
+Équipements.
+
+Disponibilités.
+
+Conditions de location.
+
+Informations sur le propriétaire.
+
+Note moyenne.
+
+Avis disponibles.
+
+Visite virtuelle 360° ou 3D.
+
+Logements similaires.
+
+Actions disponibles :
+
+Ajouter aux favoris.
+
+Partager l'annonce.
+
+Contacter le propriétaire.
+
+Signaler l'annonce.
+
+Effectuer une réservation.
+
+4.7. Visites virtuelles 360° et modélisation 3D
+Cette fonctionnalité représente l'un des éléments différenciateurs majeurs de la plateforme.
+
+Elle sera exclusivement destinée aux logements habitables.
+
+A. Capture depuis le téléphone
+Le propriétaire pourra créer une visite virtuelle depuis son smartphone.
+
+Le parcours devra comprendre :
+
+Sélection du logement.
+
+Accès au module de capture.
+
+Présentation des consignes.
+
+Capture des différentes pièces.
+
+Enregistrement des vidéos ou images.
+
+Vérification des fichiers.
+
+Envoi vers le serveur.
+
+L'application devra guider l'utilisateur sur les mouvements de caméra, la luminosité, la distance et la couverture des espaces.
+
+B. Production de la visite virtuelle
+La plateforme devra prendre en charge deux types de visites :
+
+Visite 360° :
+
+Captures panoramiques.
+
+Visualisation immersive.
+
+Déplacement entre plusieurs points de vue.
+
+Navigation entre les pièces.
+
+Reconstruction 3D :
+
+Importation des vidéos ou images.
+
+Traitement des médias.
+
+Reconstruction de l'environnement.
+
+Génération d'une représentation immersive.
+
+Vérification du résultat.
+
+Publication de la visite.
+
+Les technologies envisageables sont la photogrammétrie, le Gaussian Splatting et le NeRF.
+
+La reconstruction devra être réalisée par un service spécialisé ou une infrastructure adaptée. Une vidéo ordinaire ne garantit pas automatiquement une reconstruction 3D complète et précise.
+
+C. Visualisation mobile
+Le locataire pourra :
+
+Explorer le logement en 360°.
+
+Faire pivoter la vue.
+
+Zoomer et dézoomer.
+
+Se déplacer dans les scènes disponibles.
+
+Explorer les différentes pièces.
+
+Consulter les détails du logement.
+
+D. Visualisation depuis l'administration web
+L'administrateur pourra consulter les visites virtuelles depuis l'interface web Django.
+
+Un visualiseur compatible WebGL sera intégré au navigateur afin de permettre une expérience immersive sans installation d'application supplémentaire.
+
+E. Gestion du traitement
+Le système devra gérer les statuts :
+
+Capture en cours.
+
+Envoi en cours.
+
+Fichiers reçus.
+
+Traitement en cours.
+
+Traitement terminé.
+
+Traitement échoué.
+
+Visite publiée.
+
+L'administration devra pouvoir consulter les traitements et intervenir en cas d'erreur.
+
+4.8. Favoris et comparaison
+Le locataire pourra :
+
+Ajouter un logement aux favoris.
+
+Retirer un logement des favoris.
+
+Consulter ses favoris.
+
+Comparer plusieurs logements.
+
+La comparaison affichera notamment :
+
+Prix.
+
+Localisation.
+
+Superficie.
+
+Nombre de chambres.
+
+Nombre de salles de bain.
+
+Équipements.
+
+Disponibilité.
+
+Conditions de location.
+
+4.9. Réservation
+Le système devra proposer deux modes.
+
+Mode A : réservation avec validation
+Le locataire sélectionne un logement.
+
+Il choisit sa période.
+
+Il soumet une demande.
+
+Le propriétaire reçoit une notification.
+
+Le propriétaire accepte ou refuse.
+
+Le locataire reçoit le résultat.
+
+La réservation devient confirmée lorsque le propriétaire a accepté la demande.
+
+Mode B : réservation instantanée
+Le locataire sélectionne un logement.
+
+Il choisit une période disponible.
+
+Le système vérifie les disponibilités.
+
+La réservation est confirmée selon les règles définies.
+
+Gestion des réservations
+Le système devra intégrer :
+
+Calendrier des disponibilités.
+
+Dates de début et de fin.
+
+Calcul automatique du montant.
+
+Gestion des cautions.
+
+Gestion des avances.
+
+Gestion des frais.
+
+Acceptation et refus.
+
+Annulation.
+
+Modification.
+
+Prolongation, si autorisée.
+
+Historique.
+
+Reçus.
+
+Rappels.
+
+Statuts possibles
+En attente.
+
+Acceptée.
+
+Refusée.
+
+Confirmée.
+
+En cours.
+
+Terminée.
+
+Annulée.
+
+En litige.
+
+Le système devra empêcher les doubles réservations sur des périodes incompatibles.
+
+4.10. Messagerie intégrée
+La plateforme intégrera un système de communication entre locataires et propriétaires.
+
+Fonctionnalités :
+
+Conversations individuelles.
+
+Envoi de messages texte.
+
+Envoi de photos.
+
+Envoi de documents autorisés.
+
+Notifications de nouveaux messages.
+
+Indicateur de lecture.
+
+Historique des conversations.
+
+Association d'une conversation à un logement.
+
+Association à une réservation.
+
+Signalement d'une conversation.
+
+Blocage d'un utilisateur.
+
+La messagerie devra fonctionner en temps réel lorsque la connexion le permet.
+
+4.11. Notifications
+Les notifications concerneront :
+
+Nouvelle demande de réservation.
+
+Acceptation ou refus.
+
+Confirmation.
+
+Annulation.
+
+Nouveau message.
+
+Nouvelle annonce correspondant à une recherche enregistrée.
+
+Changement de disponibilité.
+
+Rappel de réservation.
+
+Validation ou refus d'une annonce.
+
+Résultat du traitement 3D.
+
+Les utilisateurs pourront gérer leurs préférences de notification.
+
+4.12. Avis et évaluations
+Après une location terminée, le locataire pourra évaluer :
+
+L'état du logement.
+
+La conformité de l'annonce.
+
+La propreté.
+
+La communication avec le propriétaire.
+
+Le rapport qualité-prix.
+
+Le système devra :
+
+Autoriser les avis liés à une réservation éligible.
+
+Calculer les notes moyennes.
+
+Permettre une réponse du propriétaire.
+
+Permettre le signalement d'un avis.
+
+Permettre la modération par l'administration.
+
+4.13. Signalements et litiges
+Les utilisateurs pourront signaler :
+
+Une fausse annonce.
+
+Un logement inexistant.
+
+Des photos trompeuses.
+
+Une tentative de fraude.
+
+Un comportement abusif.
+
+Un problème de réservation.
+
+Un dossier de litige pourra contenir une description, des pièces justificatives, un historique et les décisions de l'administration.
+
+4.14. Alertes et recommandations
+Les utilisateurs pourront enregistrer des critères de recherche.
+
+Lorsqu'un nouveau logement correspondra à ces critères, ils recevront une notification.
+
+Le système pourra également proposer des logements selon :
+
+Le budget.
+
+Les recherches précédentes.
+
+Les favoris.
+
+Les zones consultées.
+
+Les caractéristiques préférées.
+
+5. PLATEFORME WEB D'ADMINISTRATION DJANGO
+L'interface web est exclusivement réservée aux administrateurs. Elle ne propose pas de site public.
+
+5.1. Tableau de bord général
+L'administration devra disposer d'un tableau de bord présentant :
+
+Nombre total d'utilisateurs.
+
+Nombre de locataires.
+
+Nombre de propriétaires.
+
+Nombre d'agences.
+
+Nombre de logements.
+
+Nombre d'annonces publiées.
+
+Nombre d'annonces en attente.
+
+Nombre de réservations.
+
+Nombre de réservations confirmées.
+
+Nombre de signalements.
+
+Nombre de litiges.
+
+Des graphiques permettront de visualiser l'évolution de l'activité par période et par zone géographique.
+
+5.2. Gestion des utilisateurs
+Liste des utilisateurs.
+
+Recherche.
+
+Filtres.
+
+Consultation des profils.
+
+Modification des informations autorisées.
+
+Vérification des comptes.
+
+Activation.
+
+Désactivation.
+
+Suspension.
+
+Gestion des rôles.
+
+Consultation des réservations.
+
+Historique des activités.
+
+5.3. Gestion des annonces
+Liste des annonces.
+
+Consultation détaillée.
+
+Validation.
+
+Refus avec motif.
+
+Suspension.
+
+Archivage.
+
+Gestion des médias.
+
+Consultation de la localisation.
+
+Gestion des annonces signalées.
+
+Vérification des informations.
+
+5.4. Gestion des propriétaires et agences
+Liste des propriétaires.
+
+Liste des agences.
+
+Consultation des profils.
+
+Vérification des documents.
+
+Gestion des collaborateurs.
+
+Consultation des annonces associées.
+
+Suivi de l'activité.
+
+5.5. Gestion des réservations
+Liste des réservations.
+
+Recherche par logement.
+
+Recherche par locataire.
+
+Recherche par propriétaire.
+
+Filtrage par statut.
+
+Consultation des détails.
+
+Historique.
+
+Gestion des annulations.
+
+Gestion des litiges.
+
+5.6. Gestion des catégories et équipements
+L'administrateur pourra :
+
+Créer une catégorie.
+
+Modifier une catégorie.
+
+Désactiver une catégorie.
+
+Ajouter un équipement.
+
+Modifier un équipement.
+
+Organiser les catégories.
+
+Configurer les caractéristiques obligatoires.
+
+5.7. Gestion de la modération
+Signalements.
+
+Avis signalés.
+
+Annonces suspectes.
+
+Comptes suspects.
+
+Dossiers de litiges.
+
+Historique des décisions.
+
+Actions de modération.
+
+5.8. Gestion des visites virtuelles
+Liste des visites.
+
+Liste des traitements en cours.
+
+Consultation des erreurs.
+
+Relance des traitements lorsque possible.
+
+Modération des visites.
+
+Gestion des fichiers.
+
+Suivi du stockage.
+
+5.9. Gestion des administrateurs
+Création des administrateurs.
+
+Gestion des rôles.
+
+Attribution des permissions.
+
+Historique des connexions.
+
+Journalisation des actions sensibles.
+
+5.10. Gestion des contenus
+L'administration pourra gérer :
+
+Bannières de la page d'accueil mobile.
+
+Textes de présentation.
+
+Pages d'information.
+
+Conditions générales.
+
+Politique de confidentialité.
+
+Questions fréquentes.
+
+Messages d'information.
+
+Codes promotionnels.
+
+6. FONCTIONNALITÉS AVANCÉES
+6.1. Vérification des propriétaires
+Prévoir un système de vérification comprenant, selon les besoins :
+
+Vérification du téléphone.
+
+Vérification de l'adresse e-mail.
+
+Vérification d'identité.
+
+Documents attestant d'un droit de gestion ou de mise en location.
+
+Validation administrative.
+
+Badge de profil vérifié.
+
+La vérification d'un compte ne devra pas être présentée comme une garantie juridique absolue de propriété.
+
+6.2. Vérification des annonces
+La plateforme pourra mettre en place des contrôles portant sur :
+
+La cohérence des informations.
+
+La qualité des photos.
+
+L'existence de coordonnées valides.
+
+La présence de documents justificatifs lorsque nécessaire.
+
+La détection de doublons.
+
+Les signalements reçus.
+
+6.3. Codes promotionnels
+Création de promotions.
+
+Montant ou pourcentage de réduction.
+
+Date de début.
+
+Date de fin.
+
+Nombre maximal d'utilisations.
+
+Conditions d'utilisation.
+
+Suivi des utilisations.
+
+6.4. Partage des annonces
+Chaque annonce devra pouvoir être partagée par un lien public depuis l'application mobile.
+
+Les partages pourront être effectués via WhatsApp, Facebook et les autres applications compatibles.
+
+6.5. Assistance
+Centre d'aide dans l'application mobile.
+
+Questions fréquentes.
+
+Formulaire de contact.
+
+Tickets de support.
+
+Suivi des demandes.
+
+Réponses de l'administration.
+
+6.6. Assistant intelligent
+Une évolution pourra intégrer un assistant de recherche permettant à l'utilisateur de formuler naturellement ses besoins.
+
+Exemple : « Je cherche un appartement de deux chambres à Lomé avec un budget de 100 000 FCFA par mois. »
+
+L'assistant pourra convertir la demande en critères de recherche.
+
+D'autres usages envisageables :
+
+Recommandation de logements.
+
+Suggestions selon le budget.
+
+Détection d'annonces potentiellement frauduleuses.
+
+Suggestions de prix aux propriétaires.
+
+Ces fonctionnalités devront être développées en complément du moteur de recherche classique, et ne devront pas conditionner son fonctionnement.
+
+7. PARCOURS UTILISATEURS
+7.1. Parcours du locataire
+Accéder à l'application mobile.
+
+Rechercher un logement.
+
+Sélectionner une zone géographique.
+
+Appliquer les filtres.
+
+Consulter les résultats.
+
+Explorer la carte.
+
+Ouvrir une annonce.
+
+Consulter les photos et vidéos.
+
+Explorer la visite virtuelle si disponible.
+
+Contacter le propriétaire ou effectuer une réservation.
+
+Choisir la période.
+
+Soumettre une demande.
+
+Recevoir la confirmation.
+
+Suivre la location.
+
+Laisser un avis après la location.
+
+7.2. Parcours du propriétaire
+Créer un compte.
+
+Compléter son profil.
+
+Effectuer les vérifications demandées.
+
+Accéder à son espace propriétaire.
+
+Créer un logement.
+
+Renseigner les informations.
+
+Ajouter des photos et vidéos.
+
+Réaliser une capture 360° ou 3D si souhaité.
+
+Définir les tarifs.
+
+Définir les disponibilités.
+
+Soumettre l'annonce.
+
+Attendre la validation.
+
+Recevoir des demandes.
+
+Accepter ou refuser.
+
+Suivre les réservations.
+
+7.3. Parcours de l'administrateur
+Se connecter à l'administration web.
+
+Consulter le tableau de bord.
+
+Vérifier les nouvelles inscriptions professionnelles.
+
+Contrôler les annonces en attente.
+
+Valider ou refuser les annonces.
+
+Superviser les réservations.
+
+Traiter les signalements.
+
+Suivre les indicateurs de la plateforme.
+
+8. ARCHITECTURE TECHNIQUE
+8.1. Architecture générale
+La solution devra utiliser une architecture centralisée avec un backend commun.
+
+L'application Flutter et l'interface web d'administration communiqueront avec le backend Django à travers des API sécurisées.
+
+Le backend sera responsable de la logique métier, des permissions, de la validation des données et de la communication avec les services externes.
+
+8.2. Application mobile
+Technologie : Flutter
+
+Modules à prévoir :
+
+Authentification.
+
+Gestion du profil.
+
+Accueil.
+
+Recherche.
+
+Annonces.
+
+Cartographie.
+
+Favoris.
+
+Réservations.
+
+Messagerie.
+
+Notifications.
+
+Capture des médias.
+
+Visites virtuelles.
+
+Visualisation 3D.
+
+Espace propriétaire.
+
+L'application devra être organisée de manière modulaire afin de faciliter les évolutions.
+
+8.3. Backend
+Technologies : Python, Django et Django REST Framework
+
+Modules Django prévisionnels :
+
+accounts : comptes et profils.
+
+roles : rôles et permissions.
+
+properties : logements.
+
+categories : catégories et équipements.
+
+locations : données géographiques.
+
+media : photos et vidéos.
+
+virtual_tours : visites virtuelles et modèles 3D.
+
+availability : disponibilités.
+
+bookings : réservations.
+
+messaging : conversations et messages.
+
+notifications : notifications.
+
+favorites : favoris.
+
+reviews : avis.
+
+reports : signalements.
+
+disputes : litiges.
+
+promotions : codes promotionnels.
+
+analytics : statistiques.
+
+administration : gestion administrative.
+
+8.4. Base de données
+Technologie : PostgreSQL
+
+L'extension PostGIS sera envisagée pour les fonctionnalités géographiques.
+
+Principales entités :
+
+Entité	Description
+User	Compte utilisateur
+UserProfile	Profil personnel
+Role	Rôles et permissions
+OwnerProfile	Profil propriétaire
+Agency	Agence immobilière
+AgencyMember	Membres d'une agence
+Property	Logement
+PropertyType	Type de logement
+PropertyMedia	Photos et vidéos
+Equipment	Équipements
+PropertyEquipment	Association logement-équipement
+PropertyLocation	Localisation
+Availability	Disponibilités
+VirtualTour	Visite virtuelle
+VirtualTourAsset	Fichiers d'une visite
+Booking	Réservation
+BookingHistory	Historique
+Conversation	Conversation
+Message	Message
+Notification	Notification
+Favorite	Favori
+Review	Avis
+Report	Signalement
+Dispute	Litige
+Promotion	Promotion
+AuditLog	Journal d'activité
+Les entités devront être reliées par des relations cohérentes avec des contraintes d'intégrité.
+
+8.5. Stockage des médias
+Les médias ne devront pas être stockés directement dans la base de données.
+
+Prévoir un stockage objet compatible S3 ou un service équivalent pour :
+
+Photos.
+
+Vidéos.
+
+Documents.
+
+Captures panoramiques.
+
+Modèles 3D.
+
+Fichiers générés par le traitement.
+
+Des mécanismes de compression, de génération de miniatures et de diffusion optimisée devront être mis en place.
+
+8.6. Temps réel
+Prévoir :
+
+Django Channels.
+
+WebSockets.
+
+Firebase Cloud Messaging.
+
+Redis pour les besoins de cache et de traitement.
+
+Ces services permettront de gérer la messagerie, les notifications et certains événements en temps réel.
+
+8.7. Visualisation 3D
+Technologies envisageables :
+
+Photogrammétrie.
+
+Gaussian Splatting.
+
+NeRF.
+
+WebGL.
+
+Three.js.
+
+Moteur de visualisation mobile compatible Flutter.
+
+Le choix définitif devra tenir compte des performances, des formats produits, du coût du traitement et de la compatibilité des appareils.
+
+9. SÉCURITÉ ET PROTECTION DES DONNÉES
+La plateforme devra respecter les bonnes pratiques de sécurité.
+
+Mesures attendues :
+
+Communication HTTPS.
+
+Authentification sécurisée.
+
+Gestion des rôles et permissions.
+
+Protection des API.
+
+Validation des entrées.
+
+Protection contre les injections SQL.
+
+Limitation des tentatives de connexion.
+
+Protection des fichiers téléversés.
+
+Contrôle d'accès aux documents privés.
+
+Gestion sécurisée des sessions.
+
+Sauvegardes régulières.
+
+Journalisation des actions sensibles.
+
+Protection contre les réservations concurrentes.
+
+Gestion des accès aux modèles 3D.
+
+Procédure de suppression des comptes et des données.
+
+La plateforme devra également prendre en compte les obligations applicables en matière de protection des données personnelles.
+
+10. EXIGENCES NON FONCTIONNELLES
+10.1. Performance
+Temps de chargement raisonnable.
+
+Pagination des annonces.
+
+Optimisation des requêtes.
+
+Mise en cache des données appropriées.
+
+Compression des images.
+
+Chargement progressif des médias.
+
+Optimisation des modèles 3D.
+
+10.2. Compatibilité
+Application mobile :
+
+Android.
+
+iOS.
+
+Administration web :
+
+Google Chrome.
+
+Mozilla Firefox.
+
+Microsoft Edge.
+
+Safari.
+
+Navigateurs mobiles modernes (consultation ponctuelle).
+
+10.3. Expérience utilisateur
+Interface moderne.
+
+Navigation simple.
+
+Design responsive (administration web).
+
+Formulaires compréhensibles.
+
+Messages d'erreur explicites.
+
+États de chargement.
+
+Gestion des connexions lentes.
+
+Accessibilité raisonnable.
+
+10.4. Langues et monnaies
+Prévoir initialement :
+
+Français.
+
+Franc CFA BCEAO (XOF).
+
+L'architecture devra permettre l'ajout d'autres langues et monnaies.
+
+10.5. Disponibilité et évolutivité
+Le système devra être conçu pour supporter une augmentation progressive du nombre d'utilisateurs, de logements et de réservations.
+
+Les services lourds, notamment le traitement des vidéos et des modèles 3D, devront pouvoir être exécutés indépendamment du traitement des requêtes classiques.
+
+11. INTÉGRATIONS EXTERNES
+Les intégrations suivantes sont prévues, sous réserve de disponibilité et de compatibilité des prestataires :
+
+Service	Utilisation
+Google Maps Platform	Cartographie et itinéraires
+PostGIS	Recherche géographique
+Firebase Cloud Messaging	Notifications push
+Service SMS	Vérification OTP
+Service e-mail	E-mails transactionnels
+Stockage cloud	Médias et modèles 3D
+Service de reconstruction 3D	Génération des visites immersives
+12. TESTS ET VALIDATION
+Le projet devra faire l'objet de plusieurs catégories de tests.
+
+12.1. Tests fonctionnels
+Vérifier :
+
+Inscription et connexion.
+
+Publication des annonces.
+
+Recherche.
+
+Cartographie.
+
+Favoris.
+
+Réservations.
+
+Messagerie.
+
+Notifications.
+
+Visites virtuelles.
+
+Administration.
+
+12.2. Tests techniques
+Tests unitaires.
+
+Tests d'intégration.
+
+Tests des API.
+
+Tests de sécurité.
+
+Tests de charge.
+
+Tests de compatibilité.
+
+Tests de performance.
+
+12.3. Tests spécifiques à la 3D
+Qualité des captures.
+
+Fiabilité du traitement.
+
+Compatibilité des fichiers.
+
+Temps de chargement.
+
+Fluidité sur mobile.
+
+Fluidité sur navigateur (administration).
+
+Comportement sur les appareils moins puissants.
+
+12.4. Recette utilisateur
+Une phase de recette permettra aux différents acteurs de tester les fonctionnalités et de valider leur conformité au cahier des charges.
+
+Les anomalies devront être corrigées avant la mise en production.
+
+13. LIVRABLES ATTENDUS
+Le prestataire ou l'équipe de développement devra fournir :
+
+Le code source de l'application mobile Flutter.
+
+Le code source du backend Django.
+
+Le code source de l'administration web.
+
+La base de données et ses migrations.
+
+La documentation des API.
+
+La documentation technique.
+
+La documentation d'installation et de déploiement.
+
+Les interfaces de gestion.
+
+Le module de cartographie.
+
+Le module de réservation.
+
+Le module de messagerie.
+
+Le module de notifications.
+
+Le module de visite virtuelle et 3D.
+
+Les rapports de tests.
+
+Les configurations de déploiement.
+
+Les procédures de sauvegarde et de restauration.
+
+14. CRITÈRES D'ACCEPTATION
+Le projet sera considéré comme fonctionnel lorsque les conditions suivantes seront remplies :
+
+Un utilisateur peut créer un compte et se connecter.
+
+Un propriétaire peut publier un logement.
+
+Une annonce peut être validée et publiée.
+
+Un locataire peut rechercher et filtrer les logements.
+
+Les logements peuvent être affichés sur une carte.
+
+Les annonces peuvent être consultées sur mobile.
+
+Une réservation peut être créée et suivie.
+
+Les disponibilités empêchent les doubles réservations.
+
+Les utilisateurs peuvent communiquer par messagerie.
+
+Les notifications sont correctement envoyées.
+
+Les visites 360° sont consultables sur mobile.
+
+Les modèles 3D compatibles sont consultables sur mobile et depuis l'administration web.
+
+L'administration peut gérer les utilisateurs, annonces et réservations.
+
+Les signalements et les litiges peuvent être traités.
+
+Les exigences de sécurité et de performance sont respectées.
