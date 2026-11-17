@@ -1,4 +1,4 @@
-import 'package:cheztoi/auth/connection.dart';
+import 'package:cheztoi/views/locataire/navigation_locataire.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         colorScheme: .fromSeed(seedColor: const Color(0xFF16005D)),
         useMaterial3: true,
       ),
-      home: const Connection(),
+      home: const NavigationLocataire(),
       debugShowCheckedModeBanner: false,
     );
   }

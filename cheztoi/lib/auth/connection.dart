@@ -1,4 +1,4 @@
-import 'package:cheztoi/auth/auth_style.dart';
+import 'package:cheztoi/widget/styles.dart';
 import 'package:cheztoi/auth/inscription.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -63,7 +63,7 @@ class _ConnectionState extends State<Connection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AuthStyle.fond,
+      backgroundColor: Styles.fond,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -92,7 +92,7 @@ class _ConnectionState extends State<Connection> {
                           'Bienvenue sur ChezToi',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: AuthStyle.violet,
+                                color: Styles.violet,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -117,10 +117,10 @@ class _ConnectionState extends State<Connection> {
                             prefixIcon: const Icon(Icons.alternate_email),
                             filled: true,
                             fillColor: Colors.white,
-                            border: AuthStyle.border(Colors.grey.shade300),
-                            enabledBorder: AuthStyle.border(Colors.grey.shade300),
+                            border: Styles.border(Colors.grey.shade300),
+                            enabledBorder: Styles.border(Colors.grey.shade300),
                             focusedBorder:
-                                AuthStyle.border(AuthStyle.violet, width: 2),
+                                Styles.border(Styles.violet, width: 2),
                           ),
                           validator: (value) {
                             final text = value?.trim() ?? '';
@@ -146,10 +146,10 @@ class _ConnectionState extends State<Connection> {
                             prefixIcon: const Icon(Icons.lock_outline),
                             filled: true,
                             fillColor: Colors.white,
-                            border: AuthStyle.border(Colors.grey.shade300),
-                            enabledBorder: AuthStyle.border(Colors.grey.shade300),
+                            border: Styles.border(Colors.grey.shade300),
+                            enabledBorder: Styles.border(Colors.grey.shade300),
                             focusedBorder:
-                                AuthStyle.border(AuthStyle.violet, width: 2),
+                                Styles.border(Styles.violet, width: 2),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -185,7 +185,7 @@ class _ConnectionState extends State<Connection> {
                         FilledButton(
                           onPressed: _isLoading ? null : _seConnecter,
                           style: FilledButton.styleFrom(
-                            backgroundColor: AuthStyle.violet,
+                            backgroundColor: Styles.violet,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -231,8 +231,8 @@ class _ConnectionState extends State<Connection> {
                           icon: const Icon(Icons.person_add_outlined),
                           label: const Text('Créer un compte'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AuthStyle.violet,
-                            side: const BorderSide(color: AuthStyle.violet),
+                            foregroundColor: Styles.violet,
+                            side: const BorderSide(color: Styles.violet),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),

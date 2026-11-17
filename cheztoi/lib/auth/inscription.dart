@@ -1,4 +1,4 @@
-import 'package:cheztoi/auth/auth_style.dart';
+import 'package:cheztoi/widget/styles.dart';
 import 'package:material_ui/material_ui.dart';
 
 enum TypeCompte { locataire, proprietaire }
@@ -57,9 +57,9 @@ class _InscriptionState extends State<Inscription> {
       prefixIcon: icon != null ? Icon(icon) : null,
       filled: true,
       fillColor: Colors.white,
-      border: AuthStyle.border(Colors.grey.shade300),
-      enabledBorder: AuthStyle.border(Colors.grey.shade300),
-      focusedBorder: AuthStyle.border(AuthStyle.violet, width: 2),
+      border: Styles.border(Colors.grey.shade300),
+      enabledBorder: Styles.border(Colors.grey.shade300),
+      focusedBorder: Styles.border(Styles.violet, width: 2),
     );
   }
 
@@ -70,7 +70,7 @@ class _InscriptionState extends State<Inscription> {
         fontSize: 12,
         fontWeight: FontWeight.bold,
         letterSpacing: 1,
-        color: AuthStyle.violet,
+        color: Styles.violet,
       ),
     );
   }
@@ -146,7 +146,7 @@ class _InscriptionState extends State<Inscription> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AuthStyle.fond,
+      backgroundColor: Styles.fond,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -177,7 +177,7 @@ class _InscriptionState extends State<Inscription> {
                               .textTheme
                               .headlineSmall
                               ?.copyWith(
-                                color: AuthStyle.violet,
+                                color: Styles.violet,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -350,7 +350,7 @@ class _InscriptionState extends State<Inscription> {
                         FilledButton(
                           onPressed: _isLoading ? null : _inscrire,
                           style: FilledButton.styleFrom(
-                            backgroundColor: AuthStyle.violet,
+                            backgroundColor: Styles.violet,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -413,10 +413,10 @@ class _RoleButton extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? AuthStyle.violet : Colors.white,
+          color: selected ? Styles.violet : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AuthStyle.violet : Colors.grey.shade300,
+            color: selected ? Styles.violet : Colors.grey.shade300,
             width: selected ? 2 : 1,
           ),
         ),
@@ -426,14 +426,14 @@ class _RoleButton extends StatelessWidget {
             Icon(
               icon,
               size: 26,
-              color: selected ? Colors.white : AuthStyle.violet,
+              color: selected ? Colors.white : Styles.violet,
             ),
             const SizedBox(height: 6),
             Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AuthStyle.violet,
+                color: selected ? Colors.white : Styles.violet,
               ),
             ),
           ],
