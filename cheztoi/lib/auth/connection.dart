@@ -1,9 +1,14 @@
 import 'package:cheztoi/widget/styles.dart';
 import 'package:cheztoi/auth/inscription.dart';
+import 'package:cheztoi/services/auth_service.dart';
 import 'package:material_ui/material_ui.dart';
 
 class Connection extends StatefulWidget {
-  const Connection({super.key});
+  const Connection({super.key, this.authService, this.onAuthentifie});
+
+  /// Service injecté pour partager la même session dans toute l'application.
+  final AuthService? authService;
+  final ValueChanged<UtilisateurAuth>? onAuthentifie;
 
   @override
   State<Connection> createState() => _ConnectionState();
@@ -14,8 +19,15 @@ class _ConnectionState extends State<Connection> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  late final AuthService _auth;
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = widget.authService ?? AuthService();
+  }
 
   @override
   void dispose() {
@@ -30,15 +42,30 @@ class _ConnectionState extends State<Connection> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    // Le backend n'est pas encore branché : on simule une courte attente.
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
+    try {
+      final utilisateur = await _auth.connexion(
+        email: _emailController.text.trim(),
+        motDePasse: _passwordController.text,
+      );
+      if (!mounted) return;
+      widget.onAuthentifie?.call(utilisateur);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _afficherErreur(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _afficherErreur('Connexion impossible. Réessayez.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-    setState(() => _isLoading = false);
+  void _afficherErreur(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Connexion au backend bientôt disponible 🚧'),
+      SnackBar(
+        content: Text(message),
         behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.red.shade700,
       ),
     );
   }
@@ -55,7 +82,10 @@ class _ConnectionState extends State<Connection> {
   void _allerInscription() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const Inscription(),
+        builder: (_) => Inscription(
+              authService: _auth,
+              onAuthentifie: widget.onAuthentifie,
+            ),
       ),
     );
   }

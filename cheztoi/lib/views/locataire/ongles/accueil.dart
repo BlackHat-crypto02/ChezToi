@@ -3,10 +3,21 @@ import 'package:material_ui/material_ui.dart';
 import 'package:remixicon/remixicon.dart';
 
 class Accueil extends StatefulWidget {
-  const Accueil({super.key, this.onOngletChange});
+  const Accueil({
+    super.key,
+    this.onOngletChange,
+    this.prenom,
+    this.onDeconnexion,
+  });
 
   /// Permet aux raccourcis d'ouvrir un autre onglet de la navigation.
   final ValueChanged<int>? onOngletChange;
+
+  /// Prénom de l'utilisateur connecté (facultatif).
+  final String? prenom;
+
+  /// Si fourni, affiche le bouton de déconnexion dans l'en-tête.
+  final Future<void> Function()? onDeconnexion;
 
   @override
   State<Accueil> createState() => _AccueilState();
@@ -248,6 +259,17 @@ class _AccueilState extends State<Accueil> {
                 ),
                 onPressed: () => _bientotDisponible('Notifications'),
               ),
+              if (widget.onDeconnexion != null)
+                IconButton(
+                  tooltip: 'Déconnexion',
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.logout,
+                    size: 22,
+                    color: Styles.violet,
+                  ),
+                  onPressed: widget.onDeconnexion,
+                ),
               const Spacer(),
               RichText(
                 text: const TextSpan(
@@ -282,7 +304,7 @@ class _AccueilState extends State<Accueil> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Bonjour $_prenom 👋',
+                      'Bonjour ${widget.prenom ?? _prenom} 👋',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             color: Styles.texte,

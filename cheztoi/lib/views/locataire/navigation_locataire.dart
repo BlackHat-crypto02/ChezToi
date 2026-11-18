@@ -1,3 +1,4 @@
+import 'package:cheztoi/services/auth_service.dart';
 import 'package:cheztoi/views/locataire/ongles/accueil.dart';
 import 'package:cheztoi/widget/styles.dart';
 import 'package:cheztoi/views/locataire/ongles/carte.dart';
@@ -9,7 +10,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:remixicon/remixicon.dart';
 
 class NavigationLocataire extends StatefulWidget {
-  const NavigationLocataire({super.key});
+  const NavigationLocataire({
+    super.key,
+    this.utilisateur,
+    this.onDeconnexion,
+  });
+
+  final UtilisateurAuth? utilisateur;
+  final Future<void> Function()? onDeconnexion;
 
   @override
   State<NavigationLocataire> createState() => _NavigationLocataireState();
@@ -19,7 +27,11 @@ class _NavigationLocataireState extends State<NavigationLocataire> {
   int selectedIndex = 0;
 
   List<Widget> get _pages => [
-        Accueil(onOngletChange: onIndexTap),
+        Accueil(
+          onOngletChange: onIndexTap,
+          prenom: widget.utilisateur?.prenom,
+          onDeconnexion: widget.onDeconnexion,
+        ),
         Recherche(),
         Carte(),
         Favoris(),

@@ -1,4 +1,5 @@
 import 'package:cheztoi/widget/styles.dart';
+import 'package:cheztoi/services/auth_service.dart';
 import 'package:material_ui/material_ui.dart';
 
 enum TypeCompte { locataire, proprietaire }
@@ -6,13 +7,19 @@ enum TypeCompte { locataire, proprietaire }
 enum StatutLocataire { salarie, etudiant, independant, retraite, autre }
 
 class Inscription extends StatefulWidget {
-  const Inscription({super.key});
+  const Inscription({super.key, this.authService, this.onAuthentifie});
+
+  /// Service injecté pour partager la même session dans toute l'application.
+  final AuthService? authService;
+  final ValueChanged<UtilisateurAuth>? onAuthentifie;
 
   @override
   State<Inscription> createState() => _InscriptionState();
 }
 
 class _InscriptionState extends State<Inscription> {
+  static const List<String> _villes = ['Lomé', 'Kara', 'Sokodé', 'Kpalimé'];
+
   static const Map<StatutLocataire, String> _statuts = {
     StatutLocataire.salarie: 'Salarié(e)',
     StatutLocataire.etudiant: 'Étudiant(e)',
@@ -32,8 +39,16 @@ class _InscriptionState extends State<Inscription> {
   TypeCompte _type = TypeCompte.locataire;
   StatutLocataire _statut = StatutLocataire.salarie;
   String? _nbBiens = '1';
+  String? _ville = 'Lomé';
+  late final AuthService _auth;
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = widget.authService ?? AuthService();
+  }
 
   @override
   void dispose() {
@@ -81,17 +96,36 @@ class _InscriptionState extends State<Inscription> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
-    // Le backend n'est pas encore branché : on simule une courte attente.
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
+    final role = _type == TypeCompte.locataire ? 'locataire' : 'proprietaire';
+    try {
+      final utilisateur = await _auth.inscription(
+        nom: _nomC.text,
+        prenom: _prenomC.text,
+        email: _emailC.text,
+        telephone: _telephoneC.text,
+        ville: _ville ?? 'Lomé',
+        role: role,
+        motDePasse: _passwordC.text,
+      );
+      if (!mounted) return;
+      widget.onAuthentifie?.call(utilisateur);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _afficherErreur(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _afficherErreur('Inscription impossible. Réessayez.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-    setState(() => _isLoading = false);
-    final profil =
-        _type == TypeCompte.locataire ? 'locataire' : 'propriétaire';
+  void _afficherErreur(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Compte $profil prêt à être créé 🚧'),
+        content: Text(message),
         behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.red.shade700,
       ),
     );
   }
@@ -285,6 +319,23 @@ class _InscriptionState extends State<Inscription> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          initialValue: _ville,
+                          decoration: _decoration('Ville',
+                              icon: Icons.location_on_outlined),
+                          items: _villes
+                              .map(
+                                (ville) => DropdownMenuItem<String>(
+                                  value: ville,
+                                  child: Text(ville),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) => setState(() => _ville = value),
+                          validator: (value) =>
+                              value == null ? 'Veuillez choisir une ville' : null,
+                        ),
                         const SizedBox(height: 24),
 
                         AnimatedSwitcher(
@@ -323,7 +374,7 @@ class _InscriptionState extends State<Inscription> {
                             if (value == null || value.isEmpty) {
                               return 'Veuillez choisir un mot de passe';
                             }
-                            if (value.length < 6) return 'Au moins 6 caractères';
+                            if (value.length < 8) return 'Au moins 8 caractères';
                             return null;
                           },
                         ),
