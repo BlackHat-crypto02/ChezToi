@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.core.permissions import EstAdministrateur
+
 from .invitations import InvitationInvalide, envoyer_invitation, lire_token
 from .serializers import (
     AdminInvitationSerializer,
@@ -22,19 +24,6 @@ from .serializers import (
 )
 
 User = get_user_model()
-
-
-class EstAdministrateur(permissions.BasePermission):
-    """Accès back-office : rôle administrateur et compte staff."""
-
-    def has_permission(self, request, view):
-        user = request.user
-        return bool(
-            user
-            and user.is_authenticated
-            and user.role == User.Role.ADMIN
-            and user.is_staff
-        )
 
 
 class RegisterView(generics.CreateAPIView):
@@ -197,26 +186,5 @@ class SetupPasswordView(APIView):
                 "message": (
                     "Mot de passe défini. Vous pouvez maintenant vous connecter."
                 )
-            }
-        )
-
-
-class MeView(APIView):
-    """Profil de l'utilisateur connecté."""
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        return Response(
-            {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "role": user.role,
-                "phone": user.phone,
-                "city": user.city,
             }
         )

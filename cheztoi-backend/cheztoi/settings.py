@@ -32,6 +32,12 @@ INSTALLED_APPS = [
     # Applications ChezToi
     "apps.users.apps.UsersConfig",
     "apps.core.apps.CoreConfig",
+    "apps.logements.apps.LogementsConfig",
+    "apps.reservations.apps.ReservationsConfig",
+    "apps.messagerie.apps.MessagerieConfig",
+    "apps.notifications.apps.NotificationsConfig",
+    "apps.signalements.apps.SignalementsConfig",
+    "apps.administration.apps.AdministrationConfig",
 ]
 
 MIDDLEWARE = [
@@ -111,6 +117,10 @@ CORS_ALLOWED_ORIGINS = [
     if o.strip()
 ]
 
+# Taille max des envois (photos, panoramas 360°).
+DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
 # Ports locaux utilisés par `flutter run -d chrome` / le navigateur.
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?$",
@@ -145,3 +155,9 @@ DEFAULT_FROM_EMAIL = os.getenv(
 )
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Tests : hachage rapide des mots de passe (jamais utilisé hors `manage.py test`).
+import sys  # noqa: E402
+
+if len(sys.argv) > 1 and sys.argv[1] == "test":
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

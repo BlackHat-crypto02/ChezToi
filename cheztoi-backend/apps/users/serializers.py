@@ -226,16 +226,9 @@ class MobileTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise AuthenticationFailed("Identifiants incorrects.") from None
 
         user = self.user
-        data["user"] = {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "role": user.role,
-            "phone": user.phone,
-            "city": user.city,
-        }
+        from .compte import profil
+
+        data["user"] = profil(user, self.context.get("request"))
         return data
 
 

@@ -32,6 +32,26 @@ class User(AbstractUser):
         blank=True,
         verbose_name="invitation envoyée le",
     )
+    photo = models.ImageField(upload_to="profils/", null=True, blank=True)
+    bio = models.TextField(blank=True)
 
     def __str__(self) -> str:
         return self.get_full_name() or self.username
+
+
+class CodeReinitialisation(models.Model):
+    """Code à 6 chiffres envoyé par e-mail pour réinitialiser le mot de passe."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="codes_reinitialisation",
+    )
+    code_hash = models.CharField(max_length=128)
+    expire_le = models.DateTimeField()
+    tentatives = models.PositiveSmallIntegerField(default=0)
+    utilise = models.BooleanField(default=False)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-cree_le",)
