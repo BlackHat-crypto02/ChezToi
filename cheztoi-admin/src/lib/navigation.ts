@@ -21,8 +21,7 @@ export const entrees = [
     libelle: "Utilisateurs",
     chemin: "/utilisateurs",
     icone: RiTeamLine,
-    description:
-      "La gestion des comptes locataires et propriétaires arrivera ici.",
+    description: "Consultez les comptes locataires, propriétaires et administrateurs.",
   },
   {
     libelle: "Annonce",

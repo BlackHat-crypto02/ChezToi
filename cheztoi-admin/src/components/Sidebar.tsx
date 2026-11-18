@@ -3,9 +3,10 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { RiCloseLine, RiLogoutBoxRLine } from "@remixicon/react";
 import { entrees } from "@/lib/navigation";
+import { effacerSession } from "@/lib/auth";
 
 // Les libellés n'apparaissent qu'au survol de la barre, sur grand écran.
 const NOM_VISIBLE =
@@ -18,6 +19,7 @@ type SidebarProps = {
 
 export default function Sidebar({ ouvert, surFermer }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     if (!ouvert) return;
@@ -108,12 +110,15 @@ export default function Sidebar({ ouvert, surFermer }: SidebarProps) {
           })}
         </nav>
 
-        {/* mt-auto pousse le bouton tout en bas de la colonne. L'action sera
-            branchée quand l'authentification sera disponible. */}
+        {/* mt-auto pousse le bouton tout en bas de la colonne. */}
         <button
           type="button"
           aria-label="Déconnexion"
           title="Déconnexion"
+          onClick={() => {
+            effacerSession();
+            router.replace("/connexion");
+          }}
           className="group/entree mt-auto flex h-12 w-full shrink-0 items-center gap-4 rounded-xl pl-5 text-white/70 transition-all hover:translate-x-1 hover:bg-pri-d hover:text-white"
         >
           <RiLogoutBoxRLine size={22} className="shrink-0" />
