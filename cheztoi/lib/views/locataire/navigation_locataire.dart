@@ -18,13 +18,13 @@ class NavigationLocataire extends StatefulWidget {
 class _NavigationLocataireState extends State<NavigationLocataire> {
   int selectedIndex = 0;
 
-  static const List<Widget> _pages = [
-    Accueil(),
-    Recherche(),
-    Carte(),
-    Favoris(),
-    Message(),
-  ];
+  List<Widget> get _pages => [
+        Accueil(onOngletChange: onIndexTap),
+        Recherche(),
+        Carte(),
+        Favoris(),
+        Message(),
+      ];
 
   void onIndexTap(int index) {
     setState(() => selectedIndex = index);

@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* Palette ChezToi : deux verts seulement, le reste est blanc ou gris neutre. */
+@theme inline {
+  --color-pri: #0f766e;
+  --color-pri-d: #0b5f58;
+  --color-surface: #ffffff;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-surface);
+  color: #1f2937;
+}
+
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
+@utility sans-barre {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Entrée douce des pages, comme dans l'interface Orbit. */
+@keyframes entree {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-entree {
+  animation: entree 0.4s ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-entree {
+    animation: none;
+  }
+}
