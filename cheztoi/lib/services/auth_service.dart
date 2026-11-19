@@ -28,6 +28,9 @@ class UtilisateurAuth {
     required this.role,
     required this.telephone,
     required this.ville,
+    this.bio = '',
+    this.photo,
+    this.verifie = false,
   });
 
   final int id;
@@ -38,6 +41,16 @@ class UtilisateurAuth {
   final String role;
   final String telephone;
   final String ville;
+  final String bio;
+  final String? photo;
+  final bool verifie;
+
+  bool get estProprietaire => role == 'proprietaire';
+
+  String get nomComplet {
+    final complet = '$prenom $nom'.trim();
+    return complet.isEmpty ? username : complet;
+  }
 
   factory UtilisateurAuth.fromJson(Map<String, dynamic> json) {
     return UtilisateurAuth(
@@ -49,6 +62,9 @@ class UtilisateurAuth {
       role: (json['role'] as String?) ?? 'locataire',
       telephone: (json['phone'] as String?) ?? '',
       ville: (json['city'] as String?) ?? '',
+      bio: (json['bio'] as String?) ?? '',
+      photo: json['photo'] as String?,
+      verifie: json['verified'] == true,
     );
   }
 
@@ -61,6 +77,9 @@ class UtilisateurAuth {
         'role': role,
         'phone': telephone,
         'city': ville,
+        'bio': bio,
+        'photo': photo,
+        'verified': verifie,
       };
 }
 
@@ -148,6 +167,67 @@ class AuthService {
     return connexion(email: email, motDePasse: motDePasse);
   }
 
+  Future<String?> refreshToken() async {
+    final prefs = await _prefs;
+    return prefs.getString(_cleRefresh);
+  }
+
+  /// Renouvelle le jeton d'accès. Retourne false si la session a expiré.
+  Future<bool> rafraichir() async {
+    final refresh = await refreshToken();
+    if (refresh == null || refresh.isEmpty) return false;
+    try {
+      final reponse = await _post(
+        '/api/v1/auth/refresh/',
+        <String, dynamic>{'refresh': refresh},
+      );
+      final access = reponse['access'] as String?;
+      if (access == null || access.isEmpty) return false;
+      final prefs = await _prefs;
+      await prefs.setString(_cleToken, access);
+      if (reponse['refresh'] is String) {
+        await prefs.setString(_cleRefresh, reponse['refresh'] as String);
+      }
+      return true;
+    } on ApiException {
+      return false;
+    }
+  }
+
+  /// Met à jour l'utilisateur mémorisé après une modification de profil.
+  Future<UtilisateurAuth> enregistrerUtilisateur(
+    Map<String, dynamic> json,
+  ) async {
+    final prefs = await _prefs;
+    await prefs.setString(_cleUtilisateur, jsonEncode(json));
+    return UtilisateurAuth.fromJson(json);
+  }
+
+  /// Envoie un code de réinitialisation à 6 chiffres par e-mail.
+  Future<String> demanderReinitialisation(String email) async {
+    final reponse = await _post(
+      '/api/v1/auth/password-reset/',
+      <String, dynamic>{'email': email.trim()},
+    );
+    return (reponse['message'] as String?) ?? 'Code envoyé.';
+  }
+
+  Future<String> confirmerReinitialisation({
+    required String email,
+    required String code,
+    required String motDePasse,
+  }) async {
+    final reponse = await _post(
+      '/api/v1/auth/password-reset/confirm/',
+      <String, dynamic>{
+        'email': email.trim(),
+        'code': code.trim(),
+        'password': motDePasse,
+      },
+    );
+    return (reponse['message'] as String?) ?? 'Mot de passe réinitialisé.';
+  }
+
   Future<void> deconnecter() async {
     final prefs = await _prefs;
     await prefs.remove(_cleToken);
@@ -214,33 +294,36 @@ class AuthService {
     );
   }
 
-  String _messageErreur(http.Response reponse) {
-    try {
-      final data = jsonDecode(utf8.decode(reponse.bodyBytes));
-      if (data is Map<String, dynamic>) {
-        final detail = data['detail'];
-        if (detail is String && detail.isNotEmpty) return detail;
+  String _messageErreur(http.Response reponse) => messageErreurApi(reponse);
+}
 
-        final messages = <String>[];
-        data.forEach((cle, valeur) {
-          if (valeur is List) {
-            for (final item in valeur) {
-              if (item is! String || item.isEmpty) continue;
-              if (cle == 'non_field_errors' || cle == 'detail') {
-                messages.add(item);
-              } else {
-                messages.add('${cle.replaceAll('_', ' ')} : $item');
-              }
+/// Traduit une réponse d'erreur DRF en message lisible (partagé avec ApiClient).
+String messageErreurApi(http.Response reponse) {
+  try {
+    final data = jsonDecode(utf8.decode(reponse.bodyBytes));
+    if (data is Map<String, dynamic>) {
+      final detail = data['detail'];
+      if (detail is String && detail.isNotEmpty) return detail;
+
+      final messages = <String>[];
+      data.forEach((cle, valeur) {
+        if (valeur is List) {
+          for (final item in valeur) {
+            if (item is! String || item.isEmpty) continue;
+            if (cle == 'non_field_errors' || cle == 'detail') {
+              messages.add(item);
+            } else {
+              messages.add('${cle.replaceAll('_', ' ')} : $item');
             }
-          } else if (valeur is String && valeur.isNotEmpty) {
-            messages.add(valeur);
           }
-        });
-        if (messages.isNotEmpty) return messages.join('\n');
-      }
-    } catch (_) {
-      // Réponse HTML ou vide : on retombe sur le message générique.
+        } else if (valeur is String && valeur.isNotEmpty) {
+          messages.add(valeur);
+        }
+      });
+      if (messages.isNotEmpty) return messages.join('\n');
     }
-    return 'Erreur ${reponse.statusCode}. Réessayez.';
+  } catch (_) {
+    // Réponse HTML ou vide : on retombe sur le message générique.
   }
+  return 'Erreur ${reponse.statusCode}. Réessayez.';
 }

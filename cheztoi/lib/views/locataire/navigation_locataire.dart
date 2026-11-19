@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:cheztoi/services/auth_service.dart';
+import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/views/commun/chat.dart';
 import 'package:cheztoi/views/locataire/ongles/accueil.dart';
-import 'package:cheztoi/widget/styles.dart';
 import 'package:cheztoi/views/locataire/ongles/carte.dart';
 import 'package:cheztoi/views/locataire/ongles/favoris.dart';
-import 'package:cheztoi/views/locataire/ongles/message.dart';
 import 'package:cheztoi/views/locataire/ongles/recherche.dart';
+import 'package:cheztoi/widget/styles.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:remixicon/remixicon.dart';
@@ -14,10 +17,12 @@ class NavigationLocataire extends StatefulWidget {
     super.key,
     this.utilisateur,
     this.onDeconnexion,
+    this.onChangementRole,
   });
 
   final UtilisateurAuth? utilisateur;
   final Future<void> Function()? onDeconnexion;
+  final ValueChanged<UtilisateurAuth>? onChangementRole;
 
   @override
   State<NavigationLocataire> createState() => _NavigationLocataireState();
@@ -25,21 +30,70 @@ class NavigationLocataire extends StatefulWidget {
 
 class _NavigationLocataireState extends State<NavigationLocataire> {
   int selectedIndex = 0;
+  Map<String, dynamic> _criteres = const {};
+  int _versionRecherche = 0;
+  int _messagesNonLus = 0;
+  Timer? _minuterie;
 
-  List<Widget> get _pages => [
-        Accueil(
-          onOngletChange: onIndexTap,
-          prenom: widget.utilisateur?.prenom,
-          onDeconnexion: widget.onDeconnexion,
-        ),
-        Recherche(),
-        Carte(),
-        Favoris(),
-        Message(),
-      ];
+  @override
+  void initState() {
+    super.initState();
+    _compterMessages();
+    _minuterie = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _compterMessages(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _minuterie?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _compterMessages() async {
+    if (widget.utilisateur == null) return;
+    try {
+      final total = await ChezToiApi.instance.messagesNonLus();
+      if (mounted) setState(() => _messagesNonLus = total);
+    } catch (_) {}
+  }
 
   void onIndexTap(int index) {
     setState(() => selectedIndex = index);
+    if (index == 4) _compterMessages();
+  }
+
+  void _rechercher(Map<String, dynamic> criteres) {
+    setState(() {
+      _criteres = criteres;
+      _versionRecherche++;
+      selectedIndex = 1;
+    });
+  }
+
+  Widget _page() {
+    switch (selectedIndex) {
+      case 1:
+        return Recherche(
+          key: ValueKey('recherche_$_versionRecherche'),
+          criteresInitiaux: _criteres,
+        );
+      case 2:
+        return const Carte();
+      case 3:
+        return const Favoris();
+      case 4:
+        return const Conversations();
+      default:
+        return Accueil(
+          onOngletChange: onIndexTap,
+          onRecherche: _rechercher,
+          prenom: widget.utilisateur?.prenom,
+          onDeconnexion: widget.onDeconnexion,
+          onChangementRole: widget.onChangementRole,
+        );
+    }
   }
 
   @override
@@ -56,7 +110,7 @@ class _NavigationLocataireState extends State<NavigationLocataire> {
       },
       child: Scaffold(
         backgroundColor: Styles.fond,
-        body: _pages[selectedIndex],
+        body: _page(),
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           currentIndex: selectedIndex,
@@ -66,25 +120,34 @@ class _NavigationLocataireState extends State<NavigationLocataire> {
           unselectedItemColor: Colors.grey.shade600,
           backgroundColor: Colors.white,
           elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
               icon: Icon(RemixIcons.home_2_line),
+              activeIcon: Icon(RemixIcons.home_2_fill),
               label: 'Accueil',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(RemixIcons.search_2_line),
+              activeIcon: Icon(RemixIcons.search_2_fill),
               label: 'Recherche',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(RemixIcons.map_2_line),
+              activeIcon: Icon(RemixIcons.map_2_fill),
               label: 'Carte',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(RemixIcons.heart_3_line),
+              activeIcon: Icon(RemixIcons.heart_3_fill),
               label: 'Favoris',
             ),
             BottomNavigationBarItem(
-              icon: Icon(RemixIcons.chat_3_line),
+              icon: Badge(
+                isLabelVisible: _messagesNonLus > 0,
+                label: Text('$_messagesNonLus'),
+                child: const Icon(RemixIcons.chat_3_line),
+              ),
+              activeIcon: const Icon(RemixIcons.chat_3_fill),
               label: 'Messages',
             ),
           ],

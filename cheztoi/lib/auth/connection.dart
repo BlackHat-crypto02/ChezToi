@@ -1,5 +1,6 @@
 import 'package:cheztoi/widget/styles.dart';
 import 'package:cheztoi/auth/inscription.dart';
+import 'package:cheztoi/auth/mot_de_passe_oublie.dart';
 import 'package:cheztoi/services/auth_service.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -70,13 +71,19 @@ class _ConnectionState extends State<Connection> {
     );
   }
 
-  void _motDePasseOublie() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Réinitialisation du mot de passe à venir.'),
-        behavior: SnackBarBehavior.floating,
+  Future<void> _motDePasseOublie() async {
+    final email = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => MotDePasseOublie(
+          authService: _auth,
+          email: _emailController.text.trim(),
+        ),
       ),
     );
+    if (email != null && mounted) {
+      _emailController.text = email;
+      _passwordController.clear();
+    }
   }
 
   void _allerInscription() {

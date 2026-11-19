@@ -1,14 +1,35 @@
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cheztoi/auth/connection.dart';
 import 'package:cheztoi/auth/inscription.dart';
 import 'package:cheztoi/views/locataire/navigation_locataire.dart';
 import 'package:cheztoi/views/locataire/ongles/accueil.dart';
+import 'package:cheztoi/views/locataire/ongles/favoris.dart';
+import 'package:cheztoi/views/proprietaire/navigation_proprietaire.dart';
+import 'package:cheztoi/widget/commun.dart';
 import 'package:cheztoi/widget/styles.dart';
 
+import 'fausse_api.dart';
+
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    installerFausseApi();
+  });
+
+  void ecranGrand(WidgetTester tester) {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  }
+
   testWidgets('La page de connexion affiche le logo et les champs',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: Connection()));
@@ -32,24 +53,28 @@ void main() {
     expect(find.text('Situation professionnelle'), findsNothing);
   });
 
-  testWidgets('La carte est un ongle comme les autres',
+  testWidgets('La carte est un onglet comme les autres',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: NavigationLocataire()));
-
-    await tester.tap(find.text('Carte'));
     await tester.pumpAndSettle();
 
-    // Le label de la barre et le corps de la page affichent « Carte ».
-    expect(find.text('Carte'), findsNWidgets(2));
+    await tester.tap(find.text('Carte'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(FlutterMap), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
   });
 
   testWidgets('L’accueil affiche les icônes et le logo ChezToi',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: Accueil()));
+    await tester.pumpAndSettle();
 
     expect(find.byIcon(RemixIcons.user_3_line), findsOneWidget);
     expect(find.byIcon(RemixIcons.notification_3_line), findsOneWidget);
+    // Badge des 2 notifications non lues renvoyées par l'API.
+    expect(find.text('2'), findsWidgets);
 
     final logoFinder = find.byWidgetPredicate(
       (widget) =>
@@ -64,14 +89,16 @@ void main() {
     expect((spans[1] as TextSpan).style?.color, Styles.bleu);
   });
 
-  testWidgets('L’accueil affiche la recherche, les annonces et les raccourcis',
+  testWidgets('L’accueil affiche la recherche, les bannières et les raccourcis',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Accueil()));
+    ecranGrand(tester);
+    await tester.pumpWidget(const MaterialApp(home: Accueil(prenom: 'Uriel')));
+    await tester.pumpAndSettle();
 
     expect(find.text('Bonjour Uriel 👋'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('Visitez avant de vous déplacer'), findsOneWidget);
-    expect(find.text('Appartement disponible à Lomé'), findsOneWidget);
+    expect(find.text('Logements disponibles à Lomé'), findsOneWidget);
     expect(find.text('Explorer'), findsOneWidget);
 
     expect(find.text('Favoris'), findsOneWidget);
@@ -99,7 +126,9 @@ void main() {
 
   testWidgets('Les quatre raccourcis ont la même hauteur',
       (WidgetTester tester) async {
+    ecranGrand(tester);
     await tester.pumpWidget(const MaterialApp(home: Accueil()));
+    await tester.pumpAndSettle();
 
     final hauteurs = {
       for (final label in ['Favoris', 'Réservations', 'Alertes', 'Comparer'])
@@ -109,42 +138,79 @@ void main() {
     expect(hauteurs.length, 1);
   });
 
-  testWidgets('L’accueil affiche les biens récemment visités',
+  testWidgets('L’accueil affiche les annonces renvoyées par l’API',
       (WidgetTester tester) async {
+    ecranGrand(tester);
     await tester.pumpWidget(const MaterialApp(home: Accueil()));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Récemment visité'), findsOneWidget);
-    expect(find.text('Récemment publié'), findsOneWidget);
-    expect(find.text('Voir tout'), findsNWidgets(2));
-
-    expect(find.text('350 000 FCFA'), findsOneWidget);
-    expect(find.text('Lomé, Maritime'), findsOneWidget);
-    expect(find.text('180 000 FCFA'), findsOneWidget);
-    expect(find.text('Kara, Savanes'), findsOneWidget);
-
-    expect(find.text('220 000 FCFA'), findsOneWidget);
-    expect(find.text('Sokodé, Centrale'), findsOneWidget);
-    expect(find.text('600 000 FCFA'), findsOneWidget);
-    expect(find.text('Kpalimé, Plateaux'), findsOneWidget);
-    expect(find.byType(Image), findsNWidgets(4));
+    expect(find.text('Récemment publiés'), findsOneWidget);
+    expect(find.text('Villa Lomé II'), findsOneWidget);
+    expect(find.text(formatPrix(850000)), findsOneWidget);
+    expect(find.text('Tokoin, Kara'), findsOneWidget);
+    // Sections vides masquées.
+    expect(find.text('Les plus consultés'), findsNothing);
   });
 
-  testWidgets('Le bouton favori bascule l’icône cœur',
+  testWidgets('Le bouton favori bascule l’icône cœur et appelle l’API',
       (WidgetTester tester) async {
+    ecranGrand(tester);
+    final requetes = installerFausseApi({
+      '/api/v1/logements/1/favori/': {'est_favori': true},
+    });
     await tester.pumpWidget(const MaterialApp(home: Accueil()));
+    await tester.pumpAndSettle();
 
-    final favori = find.byKey(const ValueKey('favori_visite_1'));
+    final favori = find.byKey(const ValueKey('favori_1'));
     expect(favori, findsOneWidget);
 
-    await tester.ensureVisible(favori);
-    await tester.pumpAndSettle();
-    // 1 cœur pour le raccourci « Favoris » + 1 par carte de bien.
-    expect(find.byIcon(RemixIcons.heart_3_line), findsNWidgets(5));
-
     await tester.tap(favori);
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.byIcon(RemixIcons.heart_3_fill), findsOneWidget);
-    expect(find.byIcon(RemixIcons.heart_3_line), findsNWidgets(4));
+    expect(
+      requetes.any(
+        (r) => r.method == 'POST' && r.url.path == '/api/v1/logements/1/favori/',
+      ),
+      isTrue,
+    );
+  });
+
+  testWidgets('Les favoris s’affichent et passent en mode comparaison',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Favoris()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mon favori'), findsOneWidget);
+    await tester.tap(find.text('Comparer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Choisir 2 à 4 logements'), findsOneWidget);
+    expect(find.byType(Checkbox), findsOneWidget);
+  });
+
+  testWidgets('L’espace propriétaire a ses propres onglets',
+      (WidgetTester tester) async {
+    installerFausseApi({
+      '/api/v1/mes-logements/statistiques/': {
+        'logements_total': 3,
+        'logements_par_statut': {'publiee': 2},
+        'demandes_en_attente': 1,
+        'top_logements': <Object>[],
+      },
+    });
+    await tester.pumpWidget(const MaterialApp(home: NavigationProprietaire()));
+    await tester.pumpAndSettle();
+
+    for (final onglet in ['Tableau', 'Logements', 'Demandes', 'Messages', 'Profil']) {
+      expect(
+        find.descendant(
+          of: find.byType(BottomNavigationBar),
+          matching: find.text(onglet),
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(find.text('1 demande(s) en attente'), findsOneWidget);
   });
 }

@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ChezToi accède à vos photos pour illustrer vos annonces, votre profil et vos messages.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ChezToi utilise l’appareil photo pour photographier vos logements.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>ChezToi utilise les capteurs de mouvement pour explorer les visites 360°.</string>
 </dict>
 </plist>

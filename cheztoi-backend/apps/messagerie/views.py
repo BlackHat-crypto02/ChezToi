@@ -120,15 +120,21 @@ class DemarrerConversationView(APIView):
         destinataire_id = request.data.get("destinataire")
         user = request.user
 
+        from django.contrib.auth import get_user_model
+
         logement = None
         if logement_id:
             logement = get_object_or_404(Logement, pk=logement_id)
-            proprietaire = logement.proprietaire
-            locataire = user
+            if logement.proprietaire_id == user.id and destinataire_id:
+                # Le propriétaire répond à un locataire au sujet de son logement.
+                proprietaire = user
+                locataire = get_object_or_404(
+                    get_user_model(), pk=destinataire_id, is_active=True
+                )
+            else:
+                proprietaire = logement.proprietaire
+                locataire = user
         elif destinataire_id:
-            # Le propriétaire peut écrire à un locataire qui l'a sollicité.
-            from django.contrib.auth import get_user_model
-
             autre = get_object_or_404(get_user_model(), pk=destinataire_id, is_active=True)
             if user.role == "proprietaire":
                 proprietaire, locataire = user, autre

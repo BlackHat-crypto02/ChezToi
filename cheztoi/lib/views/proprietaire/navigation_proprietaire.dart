@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:cheztoi/services/auth_service.dart';
-import 'package:cheztoi/views/locataire/ongles/message.dart';
+import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/views/commun/chat.dart';
+import 'package:cheztoi/views/commun/profil.dart';
 import 'package:cheztoi/views/proprietaire/onglets/demande.dart';
 import 'package:cheztoi/views/proprietaire/onglets/logement.dart';
-import 'package:cheztoi/views/proprietaire/onglets/profil.dart';
 import 'package:cheztoi/views/proprietaire/onglets/tableau.dart';
 import 'package:cheztoi/widget/styles.dart';
 import 'package:flutter/services.dart';
@@ -14,10 +17,12 @@ class NavigationProprietaire extends StatefulWidget {
     super.key,
     this.utilisateur,
     this.onDeconnexion,
+    this.onChangementRole,
   });
 
   final UtilisateurAuth? utilisateur;
   final Future<void> Function()? onDeconnexion;
+  final ValueChanged<UtilisateurAuth>? onChangementRole;
 
   @override
   State<NavigationProprietaire> createState() => _NavigationProprietaireState();
@@ -25,17 +30,63 @@ class NavigationProprietaire extends StatefulWidget {
 
 class _NavigationProprietaireState extends State<NavigationProprietaire> {
   int selectedIndex = 0;
+  int _versionTableau = 0;
+  int _messagesNonLus = 0;
+  Timer? _minuterie;
 
-  List<Widget> get _pages => [
-    Demande(),
-    Logement(),
-    Message(),
-    Profil(),
-    Tableau(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _compterMessages();
+    _minuterie = Timer.periodic(const Duration(seconds: 30), (_) => _compterMessages());
+  }
+
+  @override
+  void dispose() {
+    _minuterie?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _compterMessages() async {
+    try {
+      final total = await ChezToiApi.instance.messagesNonLus();
+      if (mounted) setState(() => _messagesNonLus = total);
+    } catch (_) {}
+  }
 
   void onIndexTap(int index) {
-    setState(() => selectedIndex = index);
+    setState(() {
+      // Le tableau de bord se recharge à chaque retour.
+      if (index == 0 && selectedIndex != 0) _versionTableau++;
+      selectedIndex = index;
+    });
+    if (index == 3) _compterMessages();
+  }
+
+  Widget _page() {
+    switch (selectedIndex) {
+      case 1:
+        return const MesLogements();
+      case 2:
+        return const Demande();
+      case 3:
+        return const Conversations();
+      case 4:
+        return Profil(
+          dansOnglet: true,
+          onDeconnexion: widget.onDeconnexion,
+          onChangementRole: widget.onChangementRole,
+        );
+      default:
+        return Tableau(
+          key: ValueKey('tableau_$_versionTableau'),
+          onOngletChange: onIndexTap,
+          onNouvelleAnnonce: () async {
+            await nouvelleAnnonce(context);
+            if (mounted) setState(() => _versionTableau++);
+          },
+        );
+    }
   }
 
   @override
@@ -48,11 +99,11 @@ class _NavigationProprietaireState extends State<NavigationProprietaire> {
           SystemNavigator.pop();
           return;
         }
-        setState(() => selectedIndex = 0);
+        onIndexTap(0);
       },
       child: Scaffold(
         backgroundColor: Styles.fond,
-        body: _pages[selectedIndex],
+        body: _page(),
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           currentIndex: selectedIndex,
@@ -62,26 +113,35 @@ class _NavigationProprietaireState extends State<NavigationProprietaire> {
           unselectedItemColor: Colors.grey.shade600,
           backgroundColor: Colors.white,
           elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(RemixIcons.home_2_line),
-              label: 'Accueil',
+          items: [
+            const BottomNavigationBarItem(
+              icon: Icon(RemixIcons.dashboard_line),
+              activeIcon: Icon(RemixIcons.dashboard_fill),
+              label: 'Tableau',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(RemixIcons.building_3_line),
+              activeIcon: Icon(RemixIcons.building_3_fill),
+              label: 'Logements',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(RemixIcons.calendar_todo_line),
+              activeIcon: Icon(RemixIcons.calendar_todo_fill),
+              label: 'Demandes',
             ),
             BottomNavigationBarItem(
-              icon: Icon(RemixIcons.search_2_line),
-              label: 'Recherche',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(RemixIcons.map_2_line),
-              label: 'Carte',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(RemixIcons.heart_3_line),
-              label: 'Favoris',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(RemixIcons.chat_3_line),
+              icon: Badge(
+                isLabelVisible: _messagesNonLus > 0,
+                label: Text('$_messagesNonLus'),
+                child: const Icon(RemixIcons.chat_3_line),
+              ),
+              activeIcon: const Icon(RemixIcons.chat_3_fill),
               label: 'Messages',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(RemixIcons.user_3_line),
+              activeIcon: Icon(RemixIcons.user_3_fill),
+              label: 'Profil',
             ),
           ],
         ),
