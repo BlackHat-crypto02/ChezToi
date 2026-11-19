@@ -8,7 +8,12 @@ import 'package:cheztoi/auth/connection.dart';
 import 'package:cheztoi/auth/inscription.dart';
 import 'package:cheztoi/views/locataire/navigation_locataire.dart';
 import 'package:cheztoi/views/locataire/ongles/accueil.dart';
+import 'package:cheztoi/services/auth_service.dart';
+import 'package:cheztoi/services/session.dart';
+import 'package:cheztoi/views/commun/parametres.dart';
+import 'package:cheztoi/views/commun/profil.dart';
 import 'package:cheztoi/views/locataire/ongles/favoris.dart';
+import 'package:cheztoi/views/locataire/ongles/recherche.dart';
 import 'package:cheztoi/views/proprietaire/navigation_proprietaire.dart';
 import 'package:cheztoi/widget/commun.dart';
 import 'package:cheztoi/widget/styles.dart';
@@ -212,5 +217,97 @@ void main() {
       );
     }
     expect(find.text('1 demande(s) en attente'), findsOneWidget);
+  });
+
+  testWidgets('La connexion accepte un numéro de téléphone',
+      (WidgetTester tester) async {
+    ecranGrand(tester);
+    await tester.pumpWidget(const MaterialApp(home: Connection()));
+
+    expect(find.text('E-mail ou téléphone'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).at(0), '90 11');
+    await tester.enterText(find.byType(TextFormField).at(1), 'motdepasse');
+    await tester.tap(find.text('Se connecter'));
+    await tester.pump();
+    expect(find.text('Numéro de téléphone invalide'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).at(0), '90 11 22 33');
+    await tester.tap(find.text('Se connecter'));
+    await tester.pump();
+    expect(find.text('Numéro de téléphone invalide'), findsNothing);
+  });
+
+  testWidgets('Les préférences de notification se règlent par catégorie',
+      (WidgetTester tester) async {
+    final requetes = installerFausseApi({
+      '/api/v1/auth/preferences/': {
+        'reservations': true,
+        'messages': true,
+        'alertes': true,
+        'annonces': true,
+        'avis': true,
+      },
+    });
+    await tester.pumpWidget(
+      const MaterialApp(home: PreferencesNotifications()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SwitchListTile), findsNWidgets(5));
+    await tester.tap(find.text('Messages'));
+    await tester.pumpAndSettle();
+    expect(
+      requetes.any(
+        (r) =>
+            r.method == 'PATCH' &&
+            r.url.path == '/api/v1/auth/preferences/' &&
+            r.body.contains('"messages":false'),
+      ),
+      isTrue,
+    );
+  });
+
+  testWidgets('L’aide affiche la FAQ et le contact', (WidgetTester tester) async {
+    ecranGrand(tester);
+    await tester.pumpWidget(const MaterialApp(home: Assistance()));
+
+    expect(find.text('Comment réserver un logement ?'), findsOneWidget);
+    await tester.tap(find.text('Comment réserver un logement ?'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('réservation instantanée'), findsOneWidget);
+    expect(find.text(emailSupport), findsOneWidget);
+  });
+
+  testWidgets('La recherche propose « Autour de moi »', (WidgetTester tester) async {
+    ecranGrand(tester);
+    await tester.pumpWidget(const MaterialApp(home: Recherche()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Autour de moi'), findsOneWidget);
+    expect(find.text('1 logement'), findsOneWidget);
+  });
+
+  testWidgets('Le profil propose vérification, notifications et aide',
+      (WidgetTester tester) async {
+    ecranGrand(tester);
+    Session.utilisateur.value = UtilisateurAuth.fromJson(const {
+      'id': 1,
+      'username': 'komi',
+      'email': 'komi@exemple.tg',
+      'first_name': 'Komi',
+      'last_name': 'Mensah',
+      'role': 'proprietaire',
+    });
+    addTearDown(() => Session.utilisateur.value = null);
+
+    await tester.pumpWidget(const MaterialApp(home: Profil()));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Komi Mensah'), findsOneWidget);
+    expect(find.text('Vérification du compte'), findsOneWidget);
+    expect(find.text('Préférences de notification'), findsOneWidget);
+    expect(find.text('Aide et assistance'), findsOneWidget);
+    expect(find.text('Passer en espace locataire'), findsOneWidget);
   });
 }

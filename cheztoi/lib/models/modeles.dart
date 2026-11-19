@@ -89,10 +89,10 @@ class Equipement {
   final String icone;
 
   factory Equipement.fromJson(Map<String, dynamic> j) => Equipement(
-        id: _int(j['id']),
-        nom: _str(j['nom']),
-        icone: _str(j['icone']),
-      );
+    id: _int(j['id']),
+    nom: _str(j['nom']),
+    icone: _str(j['icone']),
+  );
 }
 
 class PhotoLogement {
@@ -111,12 +111,12 @@ class PhotoLogement {
   final int ordre;
 
   factory PhotoLogement.fromJson(Map<String, dynamic> j) => PhotoLogement(
-        id: _int(j['id']),
-        url: _str(j['image']),
-        legende: _str(j['legende']),
-        principale: j['principale'] == true,
-        ordre: _int(j['ordre']),
-      );
+    id: _int(j['id']),
+    url: _str(j['image']),
+    legende: _str(j['legende']),
+    principale: j['principale'] == true,
+    ordre: _int(j['ordre']),
+  );
 }
 
 class Panorama {
@@ -127,10 +127,65 @@ class Panorama {
   final String piece;
 
   factory Panorama.fromJson(Map<String, dynamic> j) => Panorama(
-        id: _int(j['id']),
-        url: _str(j['image']),
-        piece: _str(j['piece']),
-      );
+    id: _int(j['id']),
+    url: _str(j['image']),
+    piece: _str(j['piece']),
+  );
+}
+
+class VideoLogement {
+  const VideoLogement({required this.id, required this.url, this.legende = ''});
+
+  final int id;
+  final String url;
+  final String legende;
+
+  factory VideoLogement.fromJson(Map<String, dynamic> j) => VideoLogement(
+    id: _int(j['id']),
+    url: _str(j['fichier']),
+    legende: _str(j['legende']),
+  );
+}
+
+/// Document envoyé pour la vérification du compte propriétaire.
+class Justificatif {
+  const Justificatif({
+    required this.id,
+    required this.type,
+    required this.typeLibelle,
+    required this.statut,
+    required this.statutLibelle,
+    this.nomFichier = '',
+    this.motif = '',
+    this.creeLe,
+  });
+
+  final int id;
+  final String type;
+  final String typeLibelle;
+  final String statut;
+  final String statutLibelle;
+  final String nomFichier;
+  final String motif;
+  final DateTime? creeLe;
+
+  static const Map<String, String> types = {
+    'piece_identite': 'Pièce d’identité',
+    'titre_propriete': 'Titre de propriété ou bail',
+    'justificatif_domicile': 'Justificatif de domicile',
+    'autre': 'Autre document',
+  };
+
+  factory Justificatif.fromJson(Map<String, dynamic> j) => Justificatif(
+    id: _int(j['id']),
+    type: _str(j['type']),
+    typeLibelle: _str(j['type_libelle']),
+    statut: _str(j['statut']),
+    statutLibelle: _str(j['statut_libelle']),
+    nomFichier: _str(j['nom_fichier']),
+    motif: _str(j['motif']),
+    creeLe: _date(j['cree_le']),
+  );
 }
 
 class UtilisateurPublic {
@@ -210,6 +265,7 @@ class Logement {
     this.photo,
     this.photos = const [],
     this.panoramas = const [],
+    this.videos = const [],
     this.equipements = const [],
     this.verifie = false,
     this.statut = 'publiee',
@@ -261,6 +317,7 @@ class Logement {
   final String? photo;
   final List<PhotoLogement> photos;
   final List<Panorama> panoramas;
+  final List<VideoLogement> videos;
   final List<Equipement> equipements;
   final bool verifie;
   final String statut;
@@ -279,8 +336,7 @@ class Logement {
   String get periodiciteLibelle =>
       Libelles.periodicites[periodicite] ?? periodicite;
 
-  String get statutLibelle =>
-      Libelles.statutsLogement[statut] ?? statut;
+  String get statutLibelle => Libelles.statutsLogement[statut] ?? statut;
 
   String get localisation {
     final morceaux = [quartier, ville].where((m) => m.isNotEmpty).toList();
@@ -334,8 +390,10 @@ class Logement {
       photo: j['photo'] as String?,
       photos: _listeMaps(j['photos']).map(PhotoLogement.fromJson).toList(),
       panoramas: _listeMaps(j['panoramas']).map(Panorama.fromJson).toList(),
-      equipements:
-          _listeMaps(j['equipements']).map(Equipement.fromJson).toList(),
+      videos: _listeMaps(j['videos']).map(VideoLogement.fromJson).toList(),
+      equipements: _listeMaps(j['equipements'])
+          .map(Equipement.fromJson)
+          .toList(),
       verifie: j['verifie'] == true,
       statut: _str(j['statut']),
       motifRefus: _str(j['motif_refus']),
@@ -363,7 +421,11 @@ class Logement {
 
 /// Page de résultats paginée (`count`, `next`, `results`).
 class Page<T> {
-  const Page({required this.total, required this.elements, required this.suite});
+  const Page({
+    required this.total,
+    required this.elements,
+    required this.suite,
+  });
 
   final int total;
   final List<T> elements;
@@ -390,24 +452,22 @@ class Avis {
   final DateTime? creeLe;
 
   factory Avis.fromJson(Map<String, dynamic> j) => Avis(
-        id: _int(j['id']),
-        auteur: UtilisateurPublic.fromJson(
-          j['auteur'] is Map
-              ? Map<String, dynamic>.from(j['auteur'] as Map)
-              : null,
-        ),
-        noteGlobale: _double(j['note_globale']) ?? 0,
-        notes: {
-          'État': _int(j['note_etat']),
-          'Conformité': _int(j['note_conformite']),
-          'Propreté': _int(j['note_proprete']),
-          'Communication': _int(j['note_communication']),
-          'Qualité-prix': _int(j['note_qualite_prix']),
-        },
-        commentaire: _str(j['commentaire']),
-        reponseProprietaire: _str(j['reponse_proprietaire']),
-        creeLe: _date(j['cree_le']),
-      );
+    id: _int(j['id']),
+    auteur: UtilisateurPublic.fromJson(
+      j['auteur'] is Map ? Map<String, dynamic>.from(j['auteur'] as Map) : null,
+    ),
+    noteGlobale: _double(j['note_globale']) ?? 0,
+    notes: {
+      'État': _int(j['note_etat']),
+      'Conformité': _int(j['note_conformite']),
+      'Propreté': _int(j['note_proprete']),
+      'Communication': _int(j['note_communication']),
+      'Qualité-prix': _int(j['note_qualite_prix']),
+    },
+    commentaire: _str(j['commentaire']),
+    reponseProprietaire: _str(j['reponse_proprietaire']),
+    creeLe: _date(j['cree_le']),
+  );
 }
 
 class Reservation {
@@ -457,44 +517,43 @@ class Reservation {
   final bool peutAnnuler;
   final DateTime? creeLe;
 
-  String get statutLibelle =>
-      Libelles.statutsReservation[statut] ?? statut;
+  String get statutLibelle => Libelles.statutsReservation[statut] ?? statut;
 
   int get nuits => dateFin.difference(dateDebut).inDays;
 
   factory Reservation.fromJson(Map<String, dynamic> j) => Reservation(
-        id: _int(j['id']),
-        logement: Logement.fromJson(
-          Map<String, dynamic>.from(j['logement'] as Map? ?? const {}),
-        ),
-        locataire: UtilisateurPublic.fromJson(
-          j['locataire'] is Map
-              ? Map<String, dynamic>.from(j['locataire'] as Map)
-              : null,
-        ),
-        proprietaire: UtilisateurPublic.fromJson(
-          j['proprietaire'] is Map
-              ? Map<String, dynamic>.from(j['proprietaire'] as Map)
-              : null,
-        ),
-        dateDebut: DateTime.parse(_str(j['date_debut'])),
-        dateFin: DateTime.parse(_str(j['date_fin'])),
-        telephoneContact: _str(j['telephone_contact']),
-        nombrePersonnes: _int(j['nombre_personnes'], 1),
-        message: _str(j['message']),
-        periodes: _int(j['periodes'], 1),
-        montantLocation: _int(j['montant_location']),
-        caution: _int(j['caution']),
-        avance: _int(j['avance']),
-        frais: _int(j['frais']),
-        montantTotal: _int(j['montant_total']),
-        statut: _str(j['statut']),
-        motif: _str(j['motif']),
-        aAvis: j['a_avis'] == true,
-        peutEvaluer: j['peut_evaluer'] == true,
-        peutAnnuler: j['peut_annuler'] == true,
-        creeLe: _date(j['cree_le']),
-      );
+    id: _int(j['id']),
+    logement: Logement.fromJson(
+      Map<String, dynamic>.from(j['logement'] as Map? ?? const {}),
+    ),
+    locataire: UtilisateurPublic.fromJson(
+      j['locataire'] is Map
+          ? Map<String, dynamic>.from(j['locataire'] as Map)
+          : null,
+    ),
+    proprietaire: UtilisateurPublic.fromJson(
+      j['proprietaire'] is Map
+          ? Map<String, dynamic>.from(j['proprietaire'] as Map)
+          : null,
+    ),
+    dateDebut: DateTime.parse(_str(j['date_debut'])),
+    dateFin: DateTime.parse(_str(j['date_fin'])),
+    telephoneContact: _str(j['telephone_contact']),
+    nombrePersonnes: _int(j['nombre_personnes'], 1),
+    message: _str(j['message']),
+    periodes: _int(j['periodes'], 1),
+    montantLocation: _int(j['montant_location']),
+    caution: _int(j['caution']),
+    avance: _int(j['avance']),
+    frais: _int(j['frais']),
+    montantTotal: _int(j['montant_total']),
+    statut: _str(j['statut']),
+    motif: _str(j['motif']),
+    aAvis: j['a_avis'] == true,
+    peutEvaluer: j['peut_evaluer'] == true,
+    peutAnnuler: j['peut_annuler'] == true,
+    creeLe: _date(j['cree_le']),
+  );
 }
 
 class Estimation {
@@ -519,15 +578,15 @@ class Estimation {
   final bool instantanee;
 
   factory Estimation.fromJson(Map<String, dynamic> j) => Estimation(
-        periodes: _int(j['periodes'], 1),
-        periodicite: _str(j['periodicite']),
-        montantLocation: _int(j['montant_location']),
-        caution: _int(j['caution']),
-        avance: _int(j['avance']),
-        frais: _int(j['frais']),
-        montantTotal: _int(j['montant_total']),
-        instantanee: j['reservation_instantanee'] == true,
-      );
+    periodes: _int(j['periodes'], 1),
+    periodicite: _str(j['periodicite']),
+    montantLocation: _int(j['montant_location']),
+    caution: _int(j['caution']),
+    avance: _int(j['avance']),
+    frais: _int(j['frais']),
+    montantTotal: _int(j['montant_total']),
+    instantanee: j['reservation_instantanee'] == true,
+  );
 }
 
 class Conversation {
@@ -600,13 +659,13 @@ class Message {
   final DateTime? creeLe;
 
   factory Message.fromJson(Map<String, dynamic> j) => Message(
-        id: _int(j['id']),
-        texte: _str(j['texte']),
-        estMoi: j['est_moi'] == true,
-        image: j['image'] as String?,
-        lu: j['lu'] == true,
-        creeLe: _date(j['cree_le']),
-      );
+    id: _int(j['id']),
+    texte: _str(j['texte']),
+    estMoi: j['est_moi'] == true,
+    image: j['image'] as String?,
+    lu: j['lu'] == true,
+    creeLe: _date(j['cree_le']),
+  );
 }
 
 class NotificationApp {
@@ -629,16 +688,16 @@ class NotificationApp {
   final DateTime? creeLe;
 
   factory NotificationApp.fromJson(Map<String, dynamic> j) => NotificationApp(
-        id: _int(j['id']),
-        type: _str(j['type']),
-        titre: _str(j['titre']),
-        message: _str(j['message']),
-        donnees: j['donnees'] is Map
-            ? Map<String, dynamic>.from(j['donnees'] as Map)
-            : const {},
-        lue: j['lue'] == true,
-        creeLe: _date(j['cree_le']),
-      );
+    id: _int(j['id']),
+    type: _str(j['type']),
+    titre: _str(j['titre']),
+    message: _str(j['message']),
+    donnees: j['donnees'] is Map
+        ? Map<String, dynamic>.from(j['donnees'] as Map)
+        : const {},
+    lue: j['lue'] == true,
+    creeLe: _date(j['cree_le']),
+  );
 }
 
 class RechercheEnregistree {
@@ -677,10 +736,10 @@ class SuggestionLieu {
   final int total;
 
   factory SuggestionLieu.fromJson(Map<String, dynamic> j) => SuggestionLieu(
-        type: _str(j['type']),
-        libelle: _str(j['libelle']),
-        total: _int(j['total']),
-      );
+    type: _str(j['type']),
+    libelle: _str(j['libelle']),
+    total: _int(j['total']),
+  );
 }
 
 class DonneesAccueil {
@@ -759,8 +818,9 @@ class StatistiquesProprietaire {
       StatistiquesProprietaire(
         logementsTotal: _int(j['logements_total']),
         parStatut: j['logements_par_statut'] is Map
-            ? (j['logements_par_statut'] as Map)
-                .map((k, v) => MapEntry('$k', _int(v)))
+            ? (j['logements_par_statut'] as Map).map(
+                (k, v) => MapEntry('$k', _int(v)),
+              )
             : const {},
         vues: _int(j['vues_total']),
         favoris: _int(j['favoris_total']),

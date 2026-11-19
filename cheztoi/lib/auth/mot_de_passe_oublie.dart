@@ -6,7 +6,11 @@ import 'package:remixicon/remixicon.dart';
 
 /// Réinitialisation en deux étapes : e-mail → code à 6 chiffres + nouveau mot de passe.
 class MotDePasseOublie extends StatefulWidget {
-  const MotDePasseOublie({super.key, required this.authService, this.email = ''});
+  const MotDePasseOublie({
+    super.key,
+    required this.authService,
+    this.email = '',
+  });
 
   final AuthService authService;
   final String email;
@@ -84,7 +88,8 @@ class _MotDePasseOublieState extends State<MotDePasseOublie> {
                     Text(
                       'Mot de passe oublié',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             color: Styles.violet,
                             fontWeight: FontWeight.bold,
                           ),
@@ -93,9 +98,9 @@ class _MotDePasseOublieState extends State<MotDePasseOublie> {
                     Text(
                       _codeEnvoye
                           ? 'Saisissez le code reçu par e-mail (valable 15 minutes) '
-                              'et choisissez un nouveau mot de passe.'
+                                'et choisissez un nouveau mot de passe.'
                           : 'Indiquez votre adresse e-mail : nous vous enverrons '
-                              'un code de réinitialisation.',
+                                'un code de réinitialisation.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey.shade600),
                     ),
@@ -125,7 +130,8 @@ class _MotDePasseOublieState extends State<MotDePasseOublie> {
                           'Code à 6 chiffres',
                           icone: RemixIcons.shield_keyhole_line,
                         ),
-                        validator: (v) => RegExp(r'^\d{6}$').hasMatch(v?.trim() ?? '')
+                        validator: (v) =>
+                            RegExp(r'^\d{6}$').hasMatch(v?.trim() ?? '')
                             ? null
                             : 'Code invalide',
                       ),
@@ -138,8 +144,9 @@ class _MotDePasseOublieState extends State<MotDePasseOublie> {
                           icone: Icons.lock_outline,
                           aide: '8 caractères minimum',
                         ),
-                        validator: (v) =>
-                            (v ?? '').length < 8 ? 'Au moins 8 caractères' : null,
+                        validator: (v) => (v ?? '').length < 8
+                            ? 'Au moins 8 caractères'
+                            : null,
                       ),
                       Align(
                         alignment: Alignment.centerRight,
@@ -158,7 +165,9 @@ class _MotDePasseOublieState extends State<MotDePasseOublie> {
                       child: Text(
                         _envoi
                             ? 'Patientez…'
-                            : (_codeEnvoye ? 'Réinitialiser' : 'Recevoir le code'),
+                            : (_codeEnvoye
+                                  ? 'Réinitialiser'
+                                  : 'Recevoir le code'),
                       ),
                     ),
                   ],

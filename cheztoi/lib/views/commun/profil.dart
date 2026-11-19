@@ -5,6 +5,7 @@ import 'package:cheztoi/services/api_client.dart';
 import 'package:cheztoi/services/auth_service.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
 import 'package:cheztoi/services/session.dart';
+import 'package:cheztoi/views/commun/parametres.dart';
 import 'package:cheztoi/views/commun/reservations.dart';
 import 'package:cheztoi/views/locataire/alertes.dart';
 import 'package:cheztoi/widget/commun.dart';
@@ -39,9 +40,9 @@ class Profil extends StatelessWidget {
           : 'Revenir à l’espace locataire ?',
       message: versProprietaire
           ? 'Vous pourrez publier vos logements et gérer les demandes de '
-              'réservation. Vous pourrez revenir à l’espace locataire à tout moment.'
+                'réservation. Vous pourrez revenir à l’espace locataire à tout moment.'
           : 'Vos annonces restent en ligne ; vous pourrez revenir à l’espace '
-              'propriétaire quand vous voudrez.',
+                'propriétaire quand vous voudrez.',
     );
     if (!ok || !context.mounted) return;
     try {
@@ -131,10 +132,15 @@ class Profil extends StatelessWidget {
                               ],
                             ],
                           ),
-                          Text(u.email, style: TextStyle(color: Colors.grey.shade600)),
+                          Text(
+                            u.email,
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
                           const SizedBox(height: 6),
                           Pastille(
-                            texte: u.estProprietaire ? 'Propriétaire' : 'Locataire',
+                            texte: u.estProprietaire
+                                ? 'Propriétaire'
+                                : 'Locataire',
                           ),
                         ],
                       ),
@@ -143,7 +149,7 @@ class Profil extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
+              Material(
                 color: Colors.white,
                 child: Column(
                   children: [
@@ -173,10 +179,39 @@ class Profil extends StatelessWidget {
                         icone: RemixIcons.notification_badge_line,
                         titre: 'Mes alertes',
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(builder: (_) => const Alertes()),
+                          MaterialPageRoute<void>(
+                            builder: (_) => const Alertes(),
+                          ),
                         ),
                       ),
                     ],
+                    _entree(
+                      context,
+                      icone: u.verifie
+                          ? RemixIcons.verified_badge_line
+                          : RemixIcons.shield_user_line,
+                      titre: 'Vérification du compte',
+                      sousTitre: u.verifie
+                          ? 'Compte vérifié'
+                          : (u.estProprietaire
+                                ? 'Rassurez les locataires avec le badge vérifié'
+                                : 'Facultatif pour les locataires'),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const VerificationCompte(),
+                        ),
+                      ),
+                    ),
+                    _entree(
+                      context,
+                      icone: RemixIcons.notification_3_line,
+                      titre: 'Préférences de notification',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PreferencesNotifications(),
+                        ),
+                      ),
+                    ),
                     _entree(
                       context,
                       icone: RemixIcons.lock_password_line,
@@ -202,7 +237,7 @@ class Profil extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
+              Material(
                 color: Colors.white,
                 child: Column(
                   children: [
@@ -222,6 +257,16 @@ class Profil extends StatelessWidget {
                           }
                         },
                       ),
+                    _entree(
+                      context,
+                      icone: RemixIcons.question_line,
+                      titre: 'Aide et assistance',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const Assistance(),
+                        ),
+                      ),
+                    ),
                     _entree(
                       context,
                       icone: RemixIcons.delete_bin_line,
@@ -308,16 +353,13 @@ class _ModifierProfilState extends State<ModifierProfil> {
     if (!_formulaire.currentState!.validate()) return;
     setState(() => _envoi = true);
     try {
-      final u = await ChezToiApi.instance.modifierProfil(
-        {
-          'first_name': _prenom.text.trim(),
-          'last_name': _nom.text.trim(),
-          'phone': _telephone.text.trim(),
-          'city': _ville.text.trim(),
-          'bio': _bio.text.trim(),
-        },
-        photo: _photo,
-      );
+      final u = await ChezToiApi.instance.modifierProfil({
+        'first_name': _prenom.text.trim(),
+        'last_name': _nom.text.trim(),
+        'phone': _telephone.text.trim(),
+        'city': _ville.text.trim(),
+        'bio': _bio.text.trim(),
+      }, photo: _photo);
       Session.utilisateur.value = u;
       if (!mounted) return;
       afficherMessage(context, 'Profil mis à jour.');
@@ -352,7 +394,7 @@ class _ModifierProfilState extends State<ModifierProfil> {
                       foregroundImage: _photo != null
                           ? MemoryImage(Uint8List.fromList(_photo!.octets))
                           : (_u.photo != null ? NetworkImage(_u.photo!) : null)
-                              as ImageProvider?,
+                                as ImageProvider?,
                       child: const Icon(
                         RemixIcons.user_3_line,
                         size: 40,
@@ -379,7 +421,10 @@ class _ModifierProfilState extends State<ModifierProfil> {
             const SizedBox(height: 24),
             TextFormField(
               controller: _prenom,
-              decoration: decorationChamp('Prénom', icone: RemixIcons.user_line),
+              decoration: decorationChamp(
+                'Prénom',
+                icone: RemixIcons.user_line,
+              ),
               validator: (v) =>
                   (v ?? '').trim().isEmpty ? 'Indiquez votre prénom' : null,
             ),
@@ -392,12 +437,18 @@ class _ModifierProfilState extends State<ModifierProfil> {
             TextFormField(
               controller: _telephone,
               keyboardType: TextInputType.phone,
-              decoration: decorationChamp('Téléphone', icone: RemixIcons.phone_line),
+              decoration: decorationChamp(
+                'Téléphone',
+                icone: RemixIcons.phone_line,
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _ville,
-              decoration: decorationChamp('Ville', icone: RemixIcons.map_pin_line),
+              decoration: decorationChamp(
+                'Ville',
+                icone: RemixIcons.map_pin_line,
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(

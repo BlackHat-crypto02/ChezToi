@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cheztoi/models/modeles.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/services/position.dart';
 import 'package:cheztoi/views/commun/carte_widgets.dart';
 import 'package:cheztoi/widget/commun.dart';
 import 'package:cheztoi/widget/styles.dart';
@@ -23,7 +24,24 @@ class _CarteState extends State<Carte> {
   List<Logement> _logements = const [];
   Logement? _selection;
   bool _chargement = false;
+  bool _localisation = false;
+  LatLng? _moi;
   Timer? _attente;
+
+  Future<void> _autourDeMoi() async {
+    setState(() => _localisation = true);
+    final resultat = await obtenirPosition();
+    if (!mounted) return;
+    setState(() => _localisation = false);
+    if (!resultat.ok) {
+      afficherMessage(context, resultat.erreur!, erreur: true);
+      return;
+    }
+    final point = LatLng(resultat.latitude!, resultat.longitude!);
+    setState(() => _moi = point);
+    _carte.move(point, 14);
+    _charger();
+  }
 
   @override
   void initState() {
@@ -95,7 +113,11 @@ class _CarteState extends State<Carte> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: const [
-              BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           child: Text(
@@ -127,7 +149,21 @@ class _CarteState extends State<Carte> {
             ),
             children: [
               coucheOsm(),
-              MarkerLayer(markers: [for (final l in geolocalises) _marqueur(l)]),
+              if (_moi != null)
+                CircleLayer(
+                  circles: [
+                    CircleMarker(
+                      point: _moi!,
+                      radius: 9,
+                      color: Styles.bleu,
+                      borderColor: Colors.white,
+                      borderStrokeWidth: 3,
+                    ),
+                  ],
+                ),
+              MarkerLayer(
+                markers: [for (final l in geolocalises) _marqueur(l)],
+              ),
             ],
           ),
           SafeArea(
@@ -180,12 +216,18 @@ class _CarteState extends State<Carte> {
                     shape: const CircleBorder(),
                     color: Colors.white,
                     child: IconButton(
-                      tooltip: 'Recentrer sur Lomé',
-                      onPressed: () => _carte.move(centreParDefaut, 12),
-                      icon: const Icon(
-                        RemixIcons.focus_3_line,
-                        color: Styles.violet,
-                      ),
+                      tooltip: 'Autour de moi',
+                      onPressed: _localisation ? null : _autourDeMoi,
+                      icon: _localisation
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(
+                              RemixIcons.focus_3_line,
+                              color: Styles.violet,
+                            ),
                     ),
                   ),
                 ],

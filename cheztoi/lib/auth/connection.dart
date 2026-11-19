@@ -76,7 +76,9 @@ class _ConnectionState extends State<Connection> {
       MaterialPageRoute<String>(
         builder: (_) => MotDePasseOublie(
           authService: _auth,
-          email: _emailController.text.trim(),
+          email: _emailController.text.contains('@')
+              ? _emailController.text.trim()
+              : '',
         ),
       ),
     );
@@ -90,9 +92,9 @@ class _ConnectionState extends State<Connection> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => Inscription(
-              authService: _auth,
-              onAuthentifie: widget.onAuthentifie,
-            ),
+          authService: _auth,
+          onAuthentifie: widget.onAuthentifie,
+        ),
       ),
     );
   }
@@ -128,7 +130,8 @@ class _ConnectionState extends State<Connection> {
                         Text(
                           'Bienvenue sur ChezToi',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
                                 color: Styles.violet,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -137,9 +140,8 @@ class _ConnectionState extends State<Connection> {
                         Text(
                           'Trouvez votre prochain chez-vous en quelques clics.',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey.shade600,
-                              ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey.shade600),
                         ),
                         const SizedBox(height: 32),
 
@@ -147,27 +149,37 @@ class _ConnectionState extends State<Connection> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.email],
+                          autofillHints: const [
+                            AutofillHints.email,
+                            AutofillHints.telephoneNumber,
+                          ],
                           decoration: InputDecoration(
-                            labelText: 'Adresse e-mail',
-                            hintText: 'vous@exemple.com',
-                            prefixIcon: const Icon(Icons.alternate_email),
+                            labelText: 'E-mail ou téléphone',
+                            hintText: 'vous@exemple.com ou 90 00 00 00',
+                            prefixIcon: const Icon(Icons.person_outline),
                             filled: true,
                             fillColor: Colors.white,
                             border: Styles.border(Colors.grey.shade300),
                             enabledBorder: Styles.border(Colors.grey.shade300),
-                            focusedBorder:
-                                Styles.border(Styles.violet, width: 2),
+                            focusedBorder: Styles.border(
+                              Styles.violet,
+                              width: 2,
+                            ),
                           ),
                           validator: (value) {
                             final text = value?.trim() ?? '';
                             if (text.isEmpty) {
-                              return 'Veuillez saisir votre e-mail';
+                              return 'Saisissez votre e-mail ou votre téléphone';
                             }
-                            if (!text.contains('@') || !text.contains('.')) {
-                              return 'Adresse e-mail invalide';
+                            if (text.contains('@')) {
+                              return text.contains('.')
+                                  ? null
+                                  : 'Adresse e-mail invalide';
                             }
-                            return null;
+                            final chiffres = text.replaceAll(RegExp(r'\D'), '');
+                            return chiffres.length >= 8
+                                ? null
+                                : 'Numéro de téléphone invalide';
                           },
                         ),
                         const SizedBox(height: 16),
@@ -185,8 +197,10 @@ class _ConnectionState extends State<Connection> {
                             fillColor: Colors.white,
                             border: Styles.border(Colors.grey.shade300),
                             enabledBorder: Styles.border(Colors.grey.shade300),
-                            focusedBorder:
-                                Styles.border(Styles.violet, width: 2),
+                            focusedBorder: Styles.border(
+                              Styles.violet,
+                              width: 2,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword

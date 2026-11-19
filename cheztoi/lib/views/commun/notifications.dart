@@ -29,8 +29,8 @@ class Notifications extends StatefulWidget {
 }
 
 class _NotificationsState extends State<Notifications> {
-  late Future<List<NotificationApp>> _futur =
-      ChezToiApi.instance.notifications();
+  late Future<List<NotificationApp>> _futur = ChezToiApi.instance
+      .notifications();
 
   Future<void> _recharger() async {
     final futur = ChezToiApi.instance.notifications();
@@ -93,7 +93,8 @@ class _NotificationsState extends State<Notifications> {
             return const EtatVide(
               icone: RemixIcons.notification_3_line,
               titre: 'Aucune notification',
-              message: 'Vous serez prévenu ici de vos réservations, messages '
+              message:
+                  'Vous serez prévenu ici de vos réservations, messages '
                   'et nouvelles annonces.',
             );
           }
@@ -105,11 +106,16 @@ class _NotificationsState extends State<Notifications> {
               itemBuilder: (_, i) {
                 final n = notifications[i];
                 return ListTile(
-                  tileColor: n.lue ? null : Styles.violet.withValues(alpha: 0.05),
+                  tileColor: n.lue
+                      ? null
+                      : Styles.violet.withValues(alpha: 0.05),
                   onTap: () => _ouvrir(n),
                   leading: CircleAvatar(
                     backgroundColor: Styles.violet.withValues(alpha: 0.1),
-                    child: Icon(iconeNotification(n.type), color: Styles.violet),
+                    child: Icon(
+                      iconeNotification(n.type),
+                      color: Styles.violet,
+                    ),
                   ),
                   title: Text(
                     n.titre,

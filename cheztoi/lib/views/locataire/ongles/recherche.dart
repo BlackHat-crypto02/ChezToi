@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cheztoi/models/modeles.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/services/position.dart';
 import 'package:cheztoi/widget/commun.dart';
 import 'package:cheztoi/widget/styles.dart';
 import 'package:material_ui/material_ui.dart';
@@ -52,6 +53,38 @@ class _RechercheState extends State<Recherche> {
   List<SuggestionLieu> _suggestions = const [];
   Timer? _attente;
   bool _saisie = false;
+  bool _localisation = false;
+
+  bool get _autourDeMoi => _criteres.containsKey('lat');
+
+  Future<void> _basculerAutourDeMoi() async {
+    if (_autourDeMoi) {
+      setState(() {
+        _criteres
+          ..remove('lat')
+          ..remove('lng')
+          ..remove('rayon_km');
+        if (_tri == 'proximite') _tri = 'recent';
+      });
+      _relancer();
+      return;
+    }
+    setState(() => _localisation = true);
+    final resultat = await obtenirPosition();
+    if (!mounted) return;
+    setState(() => _localisation = false);
+    if (!resultat.ok) {
+      afficherMessage(context, resultat.erreur!, erreur: true);
+      return;
+    }
+    setState(() {
+      _criteres['lat'] = resultat.latitude!.toStringAsFixed(5);
+      _criteres['lng'] = resultat.longitude!.toStringAsFixed(5);
+      _criteres['rayon_km'] = _criteres['rayon_km'] ?? '10';
+      _tri = 'proximite';
+    });
+    _relancer();
+  }
 
   @override
   void initState() {
@@ -89,7 +122,10 @@ class _RechercheState extends State<Recherche> {
 
   Future<void> _memoriser(String texte) async {
     if (texte.isEmpty) return;
-    final liste = [texte, ..._historique.where((h) => h != texte)].take(8).toList();
+    final liste = [
+      texte,
+      ..._historique.where((h) => h != texte),
+    ].take(8).toList();
     setState(() => _historique = liste);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -156,7 +192,9 @@ class _RechercheState extends State<Recherche> {
     });
   }
 
-  int get _nombreFiltres => _criteres.keys.where((k) => k != 'q').length;
+  int get _nombreFiltres => _criteres.keys
+      .where((k) => !const {'q', 'lat', 'lng', 'rayon_km'}.contains(k))
+      .length;
 
   Future<void> _ouvrirFiltres() async {
     final criteres = await showModalBottomSheet<Map<String, dynamic>>(
@@ -167,10 +205,13 @@ class _RechercheState extends State<Recherche> {
       builder: (_) => FiltresRecherche(criteres: _criteres),
     );
     if (criteres == null) return;
-    setState(() => _criteres = {
-          ...criteres,
-          if (_criteres['q'] != null) 'q': _criteres['q'],
-        });
+    setState(
+      () => _criteres = {
+        ...criteres,
+        for (final cle in const ['q', 'lat', 'lng', 'rayon_km'])
+          if (_criteres[cle] != null) cle: _criteres[cle],
+      },
+    );
     _relancer();
   }
 
@@ -298,7 +339,8 @@ class _RechercheState extends State<Recherche> {
       return EtatVide(
         icone: RemixIcons.home_4_line,
         titre: 'Aucun logement trouvé',
-        message: 'Élargissez vos critères ou créez une alerte pour être '
+        message:
+            'Élargissez vos critères ou créez une alerte pour être '
             'prévenu des nouvelles annonces.',
         action: 'Créer une alerte',
         onAction: _enregistrer,
@@ -346,6 +388,44 @@ class _RechercheState extends State<Recherche> {
               Expanded(child: _propositions())
             else ...[
               Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    FilterChip(
+                      avatar: _localisation
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(RemixIcons.focus_3_line, size: 16),
+                      label: Text(
+                        _autourDeMoi
+                            ? 'Autour de moi · ${_criteres['rayon_km']} km'
+                            : 'Autour de moi',
+                      ),
+                      selected: _autourDeMoi,
+                      selectedColor: Styles.violet.withValues(alpha: 0.15),
+                      showCheckmark: false,
+                      onSelected: _localisation
+                          ? null
+                          : (_) => _basculerAutourDeMoi(),
+                    ),
+                    if (_autourDeMoi)
+                      for (final rayon in const ['5', '10', '25'])
+                        ChoiceChip(
+                          label: Text('$rayon km'),
+                          selected: _criteres['rayon_km'] == rayon,
+                          onSelected: (_) {
+                            setState(() => _criteres['rayon_km'] = rayon);
+                            _relancer();
+                          },
+                        ),
+                  ],
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 8, 4),
                 child: Row(
                   children: [
@@ -364,6 +444,11 @@ class _RechercheState extends State<Recherche> {
                         _relancer();
                       },
                       itemBuilder: (_) => [
+                        if (_autourDeMoi)
+                          const PopupMenuItem(
+                            value: 'proximite',
+                            child: Text('Plus proches'),
+                          ),
                         for (final e in _tris.entries)
                           PopupMenuItem(value: e.key, child: Text(e.value)),
                       ],
@@ -379,7 +464,9 @@ class _RechercheState extends State<Recherche> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _tris[_tri]!,
+                              _tri == 'proximite'
+                                  ? 'Plus proches'
+                                  : _tris[_tri]!,
                               style: const TextStyle(color: Styles.violet),
                             ),
                           ],
@@ -435,10 +522,15 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
     super.initState();
     final du = DateTime.tryParse(_s('disponible_du'));
     final au = DateTime.tryParse(_s('disponible_au'));
-    if (du != null && au != null) _disponibilite = DateTimeRange(start: du, end: au);
-    ChezToiApi.instance.equipements().then((liste) {
-      if (mounted) setState(() => _listeEquipements = liste);
-    }).catchError((_) {});
+    if (du != null && au != null) {
+      _disponibilite = DateTimeRange(start: du, end: au);
+    }
+    ChezToiApi.instance
+        .equipements()
+        .then((liste) {
+          if (mounted) setState(() => _listeEquipements = liste);
+        })
+        .catchError((_) {});
   }
 
   @override
@@ -493,12 +585,12 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
   }
 
   Widget _titre(String texte) => Padding(
-        padding: const EdgeInsets.only(top: 18, bottom: 8),
-        child: Text(
-          texte,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 18, bottom: 8),
+    child: Text(
+      texte,
+      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+    ),
+  );
 
   Widget _compteur(String libelle, int valeur, ValueChanged<int> surChange) {
     return Row(
@@ -580,7 +672,10 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
                 _titre('Localisation'),
                 TextField(
                   controller: _ville,
-                  decoration: decorationChamp('Ville', icone: RemixIcons.building_line),
+                  decoration: decorationChamp(
+                    'Ville',
+                    icone: RemixIcons.building_line,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
@@ -591,7 +686,11 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
                   ),
                 ),
                 _titre('Type de logement'),
-                _puces(Libelles.types, _types, (s) => setState(() => _types = s)),
+                _puces(
+                  Libelles.types,
+                  _types,
+                  (s) => setState(() => _types = s),
+                ),
                 _titre('Budget (FCFA)'),
                 Row(
                   children: [
@@ -624,8 +723,16 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
                   (s) => setState(() => _periodicites = s),
                 ),
                 _titre('Pièces et surface'),
-                _compteur('Chambres', _chambres, (v) => setState(() => _chambres = v)),
-                _compteur('Salles de bain', _sdb, (v) => setState(() => _sdb = v)),
+                _compteur(
+                  'Chambres',
+                  _chambres,
+                  (v) => setState(() => _chambres = v),
+                ),
+                _compteur(
+                  'Salles de bain',
+                  _sdb,
+                  (v) => setState(() => _sdb = v),
+                ),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _superficie,
@@ -659,7 +766,7 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
                     _disponibilite == null
                         ? 'Choisir des dates'
                         : 'Du ${formatDate(_disponibilite!.start)} au '
-                            '${formatDate(_disponibilite!.end)}',
+                              '${formatDate(_disponibilite!.end)}',
                   ),
                 ),
                 if (_listeEquipements.isNotEmpty) ...[

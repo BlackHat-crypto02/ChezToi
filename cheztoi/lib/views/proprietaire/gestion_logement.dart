@@ -1,6 +1,7 @@
 import 'package:cheztoi/models/modeles.dart';
 import 'package:cheztoi/services/api_client.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/views/commun/video.dart';
 import 'package:cheztoi/views/proprietaire/logement_form.dart';
 import 'package:cheztoi/widget/commun.dart';
 import 'package:cheztoi/widget/styles.dart';
@@ -68,11 +69,41 @@ class _GestionLogementState extends State<GestionLogement> {
     }, '${images.length} photo(s) ajoutée(s).');
   }
 
+  Future<void> _ajouterVideo() async {
+    final fichier = await ImagePicker().pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 3),
+    );
+    if (fichier == null) return;
+    final octets = await fichier.readAsBytes();
+    if (octets.length > 50 * 1024 * 1024) {
+      if (mounted) {
+        afficherMessage(
+          context,
+          'Vidéo trop lourde (50 Mo maximum).',
+          erreur: true,
+        );
+      }
+      return;
+    }
+    await _tache(
+      () => ChezToiApi.instance.ajouterVideo(
+        widget.logementId,
+        FichierEnvoi(octets: octets, nom: fichier.name),
+      ),
+      'Vidéo ajoutée.',
+    );
+  }
+
   Future<void> _ajouterPanorama() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const Icon(RemixIcons.camera_3_line, color: Styles.violet, size: 40),
+        icon: const Icon(
+          RemixIcons.camera_3_line,
+          color: Styles.violet,
+          size: 40,
+        ),
         title: const Text('Ajouter une vue 360°'),
         content: const Text(
           'Conseils de capture :\n\n'
@@ -108,7 +139,11 @@ class _GestionLogementState extends State<GestionLogement> {
     );
     if (piece == null) return;
     await _tache(
-      () => ChezToiApi.instance.ajouterPanorama(widget.logementId, images.first, piece),
+      () => ChezToiApi.instance.ajouterPanorama(
+        widget.logementId,
+        images.first,
+        piece,
+      ),
       'Vue 360° ajoutée.',
     );
   }
@@ -129,7 +164,11 @@ class _GestionLogementState extends State<GestionLogement> {
               ),
             ListTile(
               leading: const Icon(RemixIcons.text),
-              title: Text(p.legende.isEmpty ? 'Ajouter une légende' : 'Modifier la légende'),
+              title: Text(
+                p.legende.isEmpty
+                    ? 'Ajouter une légende'
+                    : 'Modifier la légende',
+              ),
               onTap: () => Navigator.pop(context, 'legende'),
             ),
             if (p.ordre > 0)
@@ -144,8 +183,14 @@ class _GestionLogementState extends State<GestionLogement> {
               onTap: () => Navigator.pop(context, 'apres'),
             ),
             ListTile(
-              leading: Icon(RemixIcons.delete_bin_line, color: Colors.red.shade700),
-              title: Text('Supprimer', style: TextStyle(color: Colors.red.shade700)),
+              leading: Icon(
+                RemixIcons.delete_bin_line,
+                color: Colors.red.shade700,
+              ),
+              title: Text(
+                'Supprimer',
+                style: TextStyle(color: Colors.red.shade700),
+              ),
               onTap: () => Navigator.pop(context, 'supprimer'),
             ),
           ],
@@ -161,7 +206,11 @@ class _GestionLogementState extends State<GestionLogement> {
           'Photo principale mise à jour.',
         );
       case 'legende':
-        final legende = await demanderTexte(context, titre: 'Légende', label: 'Légende');
+        final legende = await demanderTexte(
+          context,
+          titre: 'Légende',
+          label: 'Légende',
+        );
         if (legende != null) {
           await _tache(
             () => api.modifierPhoto(l.id, p.id, {'legende': legende}),
@@ -180,12 +229,16 @@ class _GestionLogementState extends State<GestionLogement> {
     }
   }
 
-  Future<void> _statut(String action, String succes) =>
-      _tache(() => ChezToiApi.instance.changerStatutLogement(widget.logementId, action), succes);
+  Future<void> _statut(String action, String succes) => _tache(
+    () => ChezToiApi.instance.changerStatutLogement(widget.logementId, action),
+    succes,
+  );
 
   Future<void> _modifier(Logement l) async {
     final modifie = await Navigator.of(context).push<Logement>(
-      MaterialPageRoute<Logement>(builder: (_) => LogementFormulaire(logement: l)),
+      MaterialPageRoute<Logement>(
+        builder: (_) => LogementFormulaire(logement: l),
+      ),
     );
     if (modifie != null) _recharger();
   }
@@ -208,7 +261,8 @@ class _GestionLogementState extends State<GestionLogement> {
   }
 
   List<Widget> _actions(Logement l) {
-    Widget principal(String texte, IconData icone, VoidCallback action) => Padding(
+    Widget principal(String texte, IconData icone, VoidCallback action) =>
+        Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: FilledButton.icon(
             onPressed: _occupe ? null : action,
@@ -217,7 +271,8 @@ class _GestionLogementState extends State<GestionLogement> {
             label: Text(texte),
           ),
         );
-    Widget secondaire(String texte, IconData icone, VoidCallback action) => Padding(
+    Widget secondaire(String texte, IconData icone, VoidCallback action) =>
+        Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: OutlinedButton.icon(
             onPressed: _occupe ? null : action,
@@ -232,7 +287,10 @@ class _GestionLogementState extends State<GestionLogement> {
         principal(
           'Soumettre à validation',
           RemixIcons.send_plane_line,
-          () => _statut('soumettre', 'Annonce envoyée à l’équipe ChezToi pour validation.'),
+          () => _statut(
+            'soumettre',
+            'Annonce envoyée à l’équipe ChezToi pour validation.',
+          ),
         ),
       if (l.statut == 'en_attente')
         secondaire(
@@ -253,7 +311,11 @@ class _GestionLogementState extends State<GestionLogement> {
           () => _statut('republier', 'Annonce de nouveau visible.'),
         ),
       if (l.statut != 'suspendue')
-        secondaire('Modifier les informations', RemixIcons.edit_line, () => _modifier(l)),
+        secondaire(
+          'Modifier les informations',
+          RemixIcons.edit_line,
+          () => _modifier(l),
+        ),
       if (['publiee', 'louee'].contains(l.statut))
         secondaire(
           'Voir l’annonce publique',
@@ -262,7 +324,9 @@ class _GestionLogementState extends State<GestionLogement> {
         ),
       if (!['archivee', 'suspendue'].contains(l.statut))
         TextButton.icon(
-          onPressed: _occupe ? null : () => _statut('archiver', 'Annonce archivée.'),
+          onPressed: _occupe
+              ? null
+              : () => _statut('archiver', 'Annonce archivée.'),
           icon: const Icon(RemixIcons.archive_line),
           label: const Text('Archiver'),
         ),
@@ -283,7 +347,8 @@ class _GestionLogementState extends State<GestionLogement> {
       body: FutureBuilder<Logement>(
         future: _futur,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done && !snapshot.hasData) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              !snapshot.hasData) {
             return const Chargement();
           }
           if (snapshot.hasError) {
@@ -297,12 +362,18 @@ class _GestionLogementState extends State<GestionLogement> {
                 children: [
                   Text(
                     l.titre,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      StatutPastille(statut: l.statut, libelle: l.statutLibelle),
+                      StatutPastille(
+                        statut: l.statut,
+                        libelle: l.statutLibelle,
+                      ),
                       const SizedBox(width: 8),
                       if (l.verifie)
                         const Pastille(
@@ -311,7 +382,11 @@ class _GestionLogementState extends State<GestionLogement> {
                           couleur: Colors.green,
                         ),
                       const Spacer(),
-                      const Icon(RemixIcons.eye_line, size: 16, color: Colors.grey),
+                      const Icon(
+                        RemixIcons.eye_line,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 4),
                       Text('${l.nombreVues} vues'),
                     ],
@@ -380,7 +455,11 @@ class _GestionLogementState extends State<GestionLogement> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: ImageLogement(url: p.url, hauteur: 110, largeur: 140),
+                                  child: ImageLogement(
+                                    url: p.url,
+                                    hauteur: 110,
+                                    largeur: 140,
+                                  ),
                                 ),
                                 if (p.principale)
                                   const Positioned(
@@ -434,7 +513,11 @@ class _GestionLogementState extends State<GestionLogement> {
                         child: ListTile(
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: ImageLogement(url: p.url, hauteur: 44, largeur: 64),
+                            child: ImageLogement(
+                              url: p.url,
+                              hauteur: 44,
+                              largeur: 64,
+                            ),
                           ),
                           title: Text(p.piece),
                           trailing: IconButton(
@@ -443,9 +526,56 @@ class _GestionLogementState extends State<GestionLogement> {
                             onPressed: _occupe
                                 ? null
                                 : () => _tache(
-                                      () => ChezToiApi.instance.supprimerPanorama(l.id, p.id),
-                                      'Vue supprimée.',
+                                    () => ChezToiApi.instance.supprimerPanorama(
+                                      l.id,
+                                      p.id,
                                     ),
+                                    'Vue supprimée.',
+                                  ),
+                          ),
+                        ),
+                      ),
+                  const SizedBox(height: 24),
+                  TitreSection(
+                    'Vidéos (${l.videos.length}/3)',
+                    action: l.videos.length < 3 ? 'Ajouter' : null,
+                    onAction: _occupe ? null : _ajouterVideo,
+                  ),
+                  const SizedBox(height: 10),
+                  if (l.videos.isEmpty)
+                    Text(
+                      'Une courte vidéo (moins de 3 min) aide les locataires à se projeter.',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    )
+                  else
+                    for (final (i, v) in l.videos.indexed)
+                      Card(
+                        color: Colors.white,
+                        child: ListTile(
+                          leading: const Icon(
+                            RemixIcons.film_line,
+                            color: Styles.violet,
+                          ),
+                          title: Text(
+                            v.legende.isEmpty ? 'Vidéo ${i + 1}' : v.legende,
+                          ),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => LecteurVideo(url: v.url),
+                            ),
+                          ),
+                          trailing: IconButton(
+                            tooltip: 'Supprimer',
+                            icon: const Icon(RemixIcons.delete_bin_line),
+                            onPressed: _occupe
+                                ? null
+                                : () => _tache(
+                                    () => ChezToiApi.instance.supprimerVideo(
+                                      l.id,
+                                      v.id,
+                                    ),
+                                    'Vidéo supprimée.',
+                                  ),
                           ),
                         ),
                       ),

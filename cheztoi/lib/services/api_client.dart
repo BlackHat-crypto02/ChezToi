@@ -17,7 +17,7 @@ class FichierEnvoi {
 /// et traduit les erreurs en [ApiException].
 class ApiClient {
   ApiClient({required this.auth, http.Client? client})
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   final AuthService auth;
   final http.Client _client;
@@ -35,7 +35,9 @@ class ApiClient {
       if (texte.isNotEmpty) parametres[cle] = texte;
     });
     final base = Uri.parse('${ApiConfig.baseUrl}$chemin');
-    return parametres.isEmpty ? base : base.replace(queryParameters: parametres);
+    return parametres.isEmpty
+        ? base
+        : base.replace(queryParameters: parametres);
   }
 
   Future<Map<String, String>> _entetes({bool json = true}) async {
@@ -117,11 +119,8 @@ class ApiClient {
 
   Future<dynamic> patch(String chemin, Object corps) async {
     final reponse = await _executer(
-      (entetes) => _client.patch(
-        uri(chemin),
-        headers: entetes,
-        body: jsonEncode(corps),
-      ),
+      (entetes) =>
+          _client.patch(uri(chemin), headers: entetes, body: jsonEncode(corps)),
     );
     return _decoder(reponse);
   }
@@ -144,25 +143,22 @@ class ApiClient {
     Map<String, String> champs = const {},
     Map<String, FichierEnvoi> fichiers = const {},
   }) async {
-    final reponse = await _executer(
-      (entetes) async {
-        final requete = http.MultipartRequest(methode, uri(chemin))
-          ..headers.addAll(entetes)
-          ..fields.addAll(champs);
-        fichiers.forEach((champ, fichier) {
-          requete.files.add(
-            http.MultipartFile.fromBytes(
-              champ,
-              fichier.octets,
-              filename: fichier.nom,
-            ),
-          );
-        });
-        final flux = await _client.send(requete);
-        return http.Response.fromStream(flux);
-      },
-      json: false,
-    );
+    final reponse = await _executer((entetes) async {
+      final requete = http.MultipartRequest(methode, uri(chemin))
+        ..headers.addAll(entetes)
+        ..fields.addAll(champs);
+      fichiers.forEach((champ, fichier) {
+        requete.files.add(
+          http.MultipartFile.fromBytes(
+            champ,
+            fichier.octets,
+            filename: fichier.nom,
+          ),
+        );
+      });
+      final flux = await _client.send(requete);
+      return http.Response.fromStream(flux);
+    }, json: false);
     return _decoder(reponse);
   }
 }

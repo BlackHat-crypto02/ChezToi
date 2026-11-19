@@ -5,6 +5,7 @@ import {
   RiFlagLine,
   RiHome5Line,
   RiMapPinLine,
+  RiShieldCheckLine,
   RiShieldLine,
   RiStarLine,
   RiTeamLine,
@@ -49,6 +50,12 @@ export const entrees = [
     chemin: "/carte",
     icone: RiMapPinLine,
     description: "Tous les logements géolocalisés, par statut.",
+  },
+  {
+    libelle: "Vérifications",
+    chemin: "/verifications",
+    icone: RiShieldCheckLine,
+    description: "Examinez les justificatifs envoyés par les propriétaires.",
   },
   {
     libelle: "Signalements",

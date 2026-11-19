@@ -35,8 +35,13 @@ class SignalementSerializer(serializers.ModelSerializer):
             attrs.get(c)
             for c in ("logement", "utilisateur", "reservation", "avis", "conversation")
         ]
-        if not any(cibles):
+        # Sans cible, seul « Autre » est accepté : c'est une demande d'assistance.
+        if not any(cibles) and attrs.get("motif") != Signalement.Motif.AUTRE:
             raise serializers.ValidationError("Indiquez ce que vous signalez.")
+        if not any(cibles) and not str(attrs.get("description", "")).strip():
+            raise serializers.ValidationError(
+                {"description": "Décrivez votre problème pour que l'équipe puisse vous aider."}
+            )
         user = self.context["request"].user
         reservation = attrs.get("reservation")
         if reservation and user.id not in (

@@ -15,8 +15,8 @@ class Alertes extends StatefulWidget {
 }
 
 class _AlertesState extends State<Alertes> {
-  late Future<List<RechercheEnregistree>> _futur =
-      ChezToiApi.instance.recherches();
+  late Future<List<RechercheEnregistree>> _futur = ChezToiApi.instance
+      .recherches();
 
   void _recharger() =>
       setState(() => _futur = ChezToiApi.instance.recherches());
@@ -26,11 +26,9 @@ class _AlertesState extends State<Alertes> {
       if (c['q'] != null) '« ${c['q']} »',
       if (c['ville'] != null) '${c['ville']}',
       if (c['type'] != null)
-        '${c['type']}'
-            .split(',')
-            .map((t) => Libelles.types[t] ?? t)
-            .join(', '),
-      if (c['prix_max'] != null) '≤ ${formatPrix(int.tryParse('${c['prix_max']}') ?? 0)}',
+        '${c['type']}'.split(',').map((t) => Libelles.types[t] ?? t).join(', '),
+      if (c['prix_max'] != null)
+        '≤ ${formatPrix(int.tryParse('${c['prix_max']}') ?? 0)}',
       if (c['chambres_min'] != null) '${c['chambres_min']}+ ch.',
     ];
     return morceaux.isEmpty ? 'Toutes les annonces' : morceaux.join(' · ');
@@ -55,7 +53,8 @@ class _AlertesState extends State<Alertes> {
             return const EtatVide(
               icone: RemixIcons.notification_badge_line,
               titre: 'Aucune alerte',
-              message: 'Depuis l’onglet Recherche, touchez la cloche pour être '
+              message:
+                  'Depuis l’onglet Recherche, touchez la cloche pour être '
                   'prévenu des nouvelles annonces qui vous correspondent.',
             );
           }
@@ -94,7 +93,11 @@ class _AlertesState extends State<Alertes> {
                             _recharger();
                           } catch (e) {
                             if (context.mounted) {
-                              afficherMessage(context, messageErreur(e), erreur: true);
+                              afficherMessage(
+                                context,
+                                messageErreur(e),
+                                erreur: true,
+                              );
                             }
                           }
                         },
@@ -108,7 +111,11 @@ class _AlertesState extends State<Alertes> {
                             _recharger();
                           } catch (e) {
                             if (context.mounted) {
-                              afficherMessage(context, messageErreur(e), erreur: true);
+                              afficherMessage(
+                                context,
+                                messageErreur(e),
+                                erreur: true,
+                              );
                             }
                           }
                         },

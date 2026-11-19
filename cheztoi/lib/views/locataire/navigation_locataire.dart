@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cheztoi/services/auth_service.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/services/session.dart';
 import 'package:cheztoi/views/commun/chat.dart';
 import 'package:cheztoi/views/locataire/ongles/accueil.dart';
 import 'package:cheztoi/views/locataire/ongles/carte.dart';
@@ -39,6 +40,13 @@ class _NavigationLocataireState extends State<NavigationLocataire> {
   void initState() {
     super.initState();
     _compterMessages();
+    // Le statut vérifié ou le rôle ont pu changer depuis l'administration.
+    if (Session.utilisateur.value != null) {
+      ChezToiApi.instance
+          .rafraichirProfil()
+          .then((u) => Session.utilisateur.value = u)
+          .ignore();
+    }
     _minuterie = Timer.periodic(
       const Duration(seconds: 30),
       (_) => _compterMessages(),

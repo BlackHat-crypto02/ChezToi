@@ -5,6 +5,9 @@ import 'package:cheztoi/widget/styles.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Ouvre le formulaire de signalement pour la cible donnée.
+/// Demande d'assistance sans cible précise (depuis l'aide).
+Future<void> signalerProbleme(BuildContext context) => signaler(context);
+
 Future<void> signaler(
   BuildContext context, {
   int? logementId,
@@ -56,7 +59,19 @@ class _FormulaireSignalementState extends State<_FormulaireSignalement> {
   final _description = TextEditingController();
   late String _motif = widget.reservationId != null
       ? 'probleme_reservation'
-      : (widget.avisId != null ? 'avis_inapproprie' : 'fausse_annonce');
+      : widget.avisId != null
+      ? 'avis_inapproprie'
+      : _general
+      ? 'autre'
+      : 'fausse_annonce';
+
+  /// Aucune cible : demande d'assistance générale (motif « Autre » obligatoire).
+  bool get _general =>
+      widget.logementId == null &&
+      widget.utilisateurId == null &&
+      widget.reservationId == null &&
+      widget.avisId == null &&
+      widget.conversationId == null;
   bool _envoi = false;
 
   @override
@@ -110,22 +125,23 @@ class _FormulaireSignalementState extends State<_FormulaireSignalement> {
               style: TextStyle(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 12),
-            RadioGroup<String>(
-              groupValue: _motif,
-              onChanged: (v) => setState(() => _motif = v ?? _motif),
-              child: Column(
-                children: [
-                  for (final entree in Libelles.motifsSignalement.entries)
-                    RadioListTile<String>(
-                      value: entree.key,
-                      title: Text(entree.value),
-                      dense: true,
-                      activeColor: Styles.violet,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                ],
+            if (!_general)
+              RadioGroup<String>(
+                groupValue: _motif,
+                onChanged: (v) => setState(() => _motif = v ?? _motif),
+                child: Column(
+                  children: [
+                    for (final entree in Libelles.motifsSignalement.entries)
+                      RadioListTile<String>(
+                        value: entree.key,
+                        title: Text(entree.value),
+                        dense: true,
+                        activeColor: Styles.violet,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                  ],
+                ),
               ),
-            ),
             const SizedBox(height: 8),
             TextField(
               controller: _description,

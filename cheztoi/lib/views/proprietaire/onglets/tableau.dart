@@ -10,11 +10,7 @@ import 'package:remixicon/remixicon.dart';
 
 /// Tableau de bord du propriétaire : chiffres clés et raccourcis.
 class Tableau extends StatefulWidget {
-  const Tableau({
-    super.key,
-    this.onOngletChange,
-    this.onNouvelleAnnonce,
-  });
+  const Tableau({super.key, this.onOngletChange, this.onNouvelleAnnonce});
 
   final ValueChanged<int>? onOngletChange;
   final VoidCallback? onNouvelleAnnonce;
@@ -24,8 +20,8 @@ class Tableau extends StatefulWidget {
 }
 
 class _TableauState extends State<Tableau> {
-  late Future<StatistiquesProprietaire> _futur =
-      ChezToiApi.instance.statistiques();
+  late Future<StatistiquesProprietaire> _futur = ChezToiApi.instance
+      .statistiques();
 
   Future<void> _recharger() async {
     final futur = ChezToiApi.instance.statistiques();
@@ -33,7 +29,12 @@ class _TableauState extends State<Tableau> {
     await futur.catchError((_) => const StatistiquesProprietaire());
   }
 
-  Widget _tuile(String libelle, String valeur, IconData icone, {VoidCallback? onTap}) {
+  Widget _tuile(
+    String libelle,
+    String valeur,
+    IconData icone, {
+    VoidCallback? onTap,
+  }) {
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
@@ -70,7 +71,10 @@ class _TableauState extends State<Tableau> {
                   ),
                 ),
               ),
-              Text(libelle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              Text(
+                libelle,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
             ],
           ),
         ),
@@ -89,10 +93,17 @@ class _TableauState extends State<Tableau> {
         surfaceTintColor: Colors.white,
         title: RichText(
           text: const TextSpan(
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Styles.texte),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Styles.texte,
+            ),
             children: [
               TextSpan(text: 'Chez'),
-              TextSpan(text: 'Toi', style: TextStyle(color: Styles.bleu)),
+              TextSpan(
+                text: 'Toi',
+                style: TextStyle(color: Styles.bleu),
+              ),
               TextSpan(
                 text: '  Pro',
                 style: TextStyle(fontSize: 14, color: Colors.grey),
@@ -101,7 +112,9 @@ class _TableauState extends State<Tableau> {
           ),
         ),
         actions: [
-          ClocheNotifications(onOuvrirMessages: () => widget.onOngletChange?.call(3)),
+          ClocheNotifications(
+            onOuvrirMessages: () => widget.onOngletChange?.call(3),
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -114,7 +127,10 @@ class _TableauState extends State<Tableau> {
               return const Chargement();
             }
             if (snapshot.hasError) {
-              return EtatErreur(erreur: snapshot.error!, onReessayer: _recharger);
+              return EtatErreur(
+                erreur: snapshot.error!,
+                onReessayer: _recharger,
+              );
             }
             final s = snapshot.data!;
             return ListView(
@@ -123,9 +139,9 @@ class _TableauState extends State<Tableau> {
                 Text(
                   prenom.isEmpty ? 'Bonjour 👋' : 'Bonjour $prenom 👋',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Styles.texte,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Styles.texte,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -138,16 +154,25 @@ class _TableauState extends State<Tableau> {
                     color: Styles.violet,
                     child: ListTile(
                       onTap: () => widget.onOngletChange?.call(2),
-                      leading: const Icon(RemixIcons.calendar_todo_line, color: Colors.white),
+                      leading: const Icon(
+                        RemixIcons.calendar_todo_line,
+                        color: Colors.white,
+                      ),
                       title: Text(
                         '${s.demandesEnAttente} demande(s) en attente',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       subtitle: const Text(
                         'Répondez vite : les locataires attendent votre réponse.',
                         style: TextStyle(color: Colors.white70),
                       ),
-                      trailing: const Icon(RemixIcons.arrow_right_s_line, color: Colors.white),
+                      trailing: const Icon(
+                        RemixIcons.arrow_right_s_line,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 const SizedBox(height: 12),
@@ -159,29 +184,55 @@ class _TableauState extends State<Tableau> {
                   crossAxisSpacing: 12,
                   childAspectRatio: 1.35,
                   children: [
-                    _tuile('Logements', '${s.logementsTotal}', RemixIcons.building_3_line,
-                        onTap: () => widget.onOngletChange?.call(1)),
-                    _tuile('Annonces en ligne', '${s.parStatut['publiee'] ?? 0}',
-                        RemixIcons.global_line,
-                        onTap: () => widget.onOngletChange?.call(1)),
+                    _tuile(
+                      'Logements',
+                      '${s.logementsTotal}',
+                      RemixIcons.building_3_line,
+                      onTap: () => widget.onOngletChange?.call(1),
+                    ),
+                    _tuile(
+                      'Annonces en ligne',
+                      '${s.parStatut['publiee'] ?? 0}',
+                      RemixIcons.global_line,
+                      onTap: () => widget.onOngletChange?.call(1),
+                    ),
                     _tuile('Vues', '${s.vues}', RemixIcons.eye_line),
-                    _tuile('Mis en favori', '${s.favoris}', RemixIcons.heart_3_line),
-                    _tuile('Réservations', '${s.reservations}', RemixIcons.calendar_check_line,
-                        onTap: () => widget.onOngletChange?.call(2)),
-                    _tuile('Revenus confirmés', formatPrix(s.revenus),
-                        RemixIcons.money_dollar_circle_line),
+                    _tuile(
+                      'Mis en favori',
+                      '${s.favoris}',
+                      RemixIcons.heart_3_line,
+                    ),
+                    _tuile(
+                      'Réservations',
+                      '${s.reservations}',
+                      RemixIcons.calendar_check_line,
+                      onTap: () => widget.onOngletChange?.call(2),
+                    ),
+                    _tuile(
+                      'Revenus confirmés',
+                      formatPrix(s.revenus),
+                      RemixIcons.money_dollar_circle_line,
+                    ),
                     _tuile(
                       'Note moyenne',
                       s.noteMoyenne == null ? '—' : '${s.noteMoyenne}/5',
                       RemixIcons.star_line,
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => const AvisRecus()),
+                        MaterialPageRoute<void>(
+                          builder: (_) => const AvisRecus(),
+                        ),
                       ),
                     ),
-                    _tuile('Avis reçus', '${s.nombreAvis}', RemixIcons.chat_quote_line,
-                        onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(builder: (_) => const AvisRecus()),
-                            )),
+                    _tuile(
+                      'Avis reçus',
+                      '${s.nombreAvis}',
+                      RemixIcons.chat_quote_line,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const AvisRecus(),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -199,8 +250,14 @@ class _TableauState extends State<Tableau> {
                     Card(
                       color: Colors.white,
                       child: ListTile(
-                        title: Text('${t['titre']}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                        subtitle: Text(Libelles.statutsLogement['${t['statut']}'] ?? ''),
+                        title: Text(
+                          '${t['titre']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          Libelles.statutsLogement['${t['statut']}'] ?? '',
+                        ),
                         trailing: Text(
                           '${t['nombre_vues']} vues · ${t['nb_favoris']} ♥',
                           style: const TextStyle(fontWeight: FontWeight.w600),

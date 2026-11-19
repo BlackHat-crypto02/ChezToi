@@ -3,6 +3,7 @@ import 'package:cheztoi/services/chez_toi_api.dart';
 import 'package:cheztoi/services/session.dart';
 import 'package:cheztoi/views/commun/chat.dart';
 import 'package:cheztoi/views/commun/signalement.dart';
+import 'package:cheztoi/views/locataire/reservation_form.dart';
 import 'package:cheztoi/widget/commun.dart';
 import 'package:cheztoi/widget/styles.dart';
 import 'package:material_ui/material_ui.dart';
@@ -71,12 +72,18 @@ class CarteReservation extends StatelessWidget {
                     Text(
                       '${formatDate(r.dateDebut, annee: false)} → '
                       '${formatDate(r.dateFin)}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        StatutPastille(statut: r.statut, libelle: r.statutLibelle),
+                        StatutPastille(
+                          statut: r.statut,
+                          libelle: r.statutLibelle,
+                        ),
                         const Spacer(),
                         Text(
                           formatPrix(r.montantTotal, r.logement.devise),
@@ -136,13 +143,18 @@ class _MesReservationsState extends State<MesReservations> {
               return const Chargement();
             }
             if (snapshot.hasError) {
-              return EtatErreur(erreur: snapshot.error!, onReessayer: _recharger);
+              return EtatErreur(
+                erreur: snapshot.error!,
+                onReessayer: _recharger,
+              );
             }
             final toutes = snapshot.data!;
             return TabBarView(
               children: [
                 for (final statuts in _onglets.values)
-                  _liste(toutes.where((r) => statuts.contains(r.statut)).toList()),
+                  _liste(
+                    toutes.where((r) => statuts.contains(r.statut)).toList(),
+                  ),
               ],
             );
           },
@@ -193,13 +205,14 @@ class DetailReservation extends StatefulWidget {
 }
 
 class _DetailReservationState extends State<DetailReservation> {
-  late Future<Reservation> _futur =
-      ChezToiApi.instance.reservation(widget.reservationId);
+  late Future<Reservation> _futur = ChezToiApi.instance.reservation(
+    widget.reservationId,
+  );
   bool _action = false;
 
   void _recharger() => setState(
-        () => _futur = ChezToiApi.instance.reservation(widget.reservationId),
-      );
+    () => _futur = ChezToiApi.instance.reservation(widget.reservationId),
+  );
 
   Future<void> _executer(String action, {String motif = ''}) async {
     setState(() => _action = true);
@@ -210,19 +223,69 @@ class _DetailReservationState extends State<DetailReservation> {
         motif: motif,
       );
       if (!mounted) return;
-      afficherMessage(
-        context,
-        switch (action) {
-          'accepter' => 'Réservation acceptée.',
-          'refuser' => 'Demande refusée.',
-          _ => 'Réservation annulée.',
-        },
-      );
+      afficherMessage(context, switch (action) {
+        'accepter' => 'Réservation acceptée.',
+        'refuser' => 'Demande refusée.',
+        _ => 'Réservation annulée.',
+      });
       _recharger();
     } catch (e) {
       if (mounted) afficherMessage(context, messageErreur(e), erreur: true);
     } finally {
       if (mounted) setState(() => _action = false);
+    }
+  }
+
+  Future<void> _modifierDates(Reservation r) async {
+    final choix = await showDateRangePicker(
+      context: context,
+      firstDate: DateUtils.dateOnly(DateTime.now()),
+      lastDate: DateTime.now().add(const Duration(days: 730)),
+      initialDateRange: DateTimeRange(start: r.dateDebut, end: r.dateFin),
+      helpText: 'Nouvelles dates',
+      saveText: 'Valider',
+    );
+    if (choix == null) return;
+    setState(() => _action = true);
+    try {
+      await ChezToiApi.instance.modifierReservation(
+        r.id,
+        choix.start,
+        choix.end,
+      );
+      if (!mounted) return;
+      afficherMessage(context, 'Dates modifiées : le montant a été recalculé.');
+      _recharger();
+    } catch (e) {
+      if (mounted) afficherMessage(context, messageErreur(e), erreur: true);
+    } finally {
+      if (mounted) setState(() => _action = false);
+    }
+  }
+
+  Future<void> _prolonger(Reservation r) async {
+    // La fiche complète est nécessaire pour estimer le prix.
+    try {
+      final logement = await ChezToiApi.instance.logement(r.logement.id);
+      if (!mounted) return;
+      final duree = r.dateFin.difference(r.dateDebut);
+      final ok = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
+          builder: (_) => ReservationForm(
+            logement: logement,
+            prolongation: true,
+            periodeInitiale: DateTimeRange(
+              start: r.dateFin,
+              end: r.dateFin.add(
+                duree.inDays > 0 ? duree : const Duration(days: 30),
+              ),
+            ),
+          ),
+        ),
+      );
+      if (ok == true) _recharger();
+    } catch (e) {
+      if (mounted) afficherMessage(context, messageErreur(e), erreur: true);
     }
   }
 
@@ -286,7 +349,8 @@ class _DetailReservationState extends State<DetailReservation> {
             return EtatErreur(erreur: snapshot.error!, onReessayer: _recharger);
           }
           final r = snapshot.data!;
-          final proprietaire = r.logement.proprietaire?.id == Session.id ||
+          final proprietaire =
+              r.logement.proprietaire?.id == Session.id ||
               r.proprietaire.id == Session.id;
           final devise = r.logement.devise;
           return ListView(
@@ -295,7 +359,10 @@ class _DetailReservationState extends State<DetailReservation> {
               LogementTuile(logement: r.logement, afficherFavori: false),
               const SizedBox(height: 16),
               Center(
-                child: StatutPastille(statut: r.statut, libelle: r.statutLibelle),
+                child: StatutPastille(
+                  statut: r.statut,
+                  libelle: r.statutLibelle,
+                ),
               ),
               if (r.motif.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -325,8 +392,11 @@ class _DetailReservationState extends State<DetailReservation> {
                       _ligne('Téléphone', r.telephoneContact),
                     _ligne('Arrivée', formatDate(r.dateDebut)),
                     _ligne('Départ', formatDate(r.dateFin)),
-                    _ligne('Durée', '${r.nuits} jour(s) · ${r.periodes} '
-                        '${r.logement.periodiciteLibelle}'),
+                    _ligne(
+                      'Durée',
+                      '${r.nuits} jour(s) · ${r.periodes} '
+                          '${r.logement.periodiciteLibelle}',
+                    ),
                     _ligne('Personnes', '${r.nombrePersonnes}'),
                     const Divider(height: 24),
                     _ligne('Location', formatPrix(r.montantLocation, devise)),
@@ -336,7 +406,11 @@ class _DetailReservationState extends State<DetailReservation> {
                       _ligne('Avance', formatPrix(r.avance, devise)),
                     if (r.frais > 0)
                       _ligne('Frais et charges', formatPrix(r.frais, devise)),
-                    _ligne('Total', formatPrix(r.montantTotal, devise), gras: true),
+                    _ligne(
+                      'Total',
+                      formatPrix(r.montantTotal, devise),
+                      gras: true,
+                    ),
                     const Divider(height: 24),
                     _ligne('Demandée le', formatDate(r.creeLe)),
                   ],
@@ -374,6 +448,28 @@ class _DetailReservationState extends State<DetailReservation> {
                 ),
                 const SizedBox(height: 10),
               ],
+              if (!proprietaire && r.statut == 'en_attente')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: OutlinedButton.icon(
+                    onPressed: _action ? null : () => _modifierDates(r),
+                    style: styleBoutonSecondaire(),
+                    icon: const Icon(RemixIcons.calendar_event_line),
+                    label: const Text('Modifier les dates'),
+                  ),
+                ),
+              if (!proprietaire &&
+                  ['confirmee', 'en_cours'].contains(r.statut) &&
+                  r.logement.statut == 'publiee')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: OutlinedButton.icon(
+                    onPressed: _action ? null : () => _prolonger(r),
+                    style: styleBoutonSecondaire(),
+                    icon: const Icon(RemixIcons.calendar_schedule_line),
+                    label: const Text('Prolonger le séjour'),
+                  ),
+                ),
               if (r.peutEvaluer)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -396,7 +492,9 @@ class _DetailReservationState extends State<DetailReservation> {
                 style: styleBoutonSecondaire(),
                 icon: const Icon(RemixIcons.chat_3_line),
                 label: Text(
-                  proprietaire ? 'Écrire au locataire' : 'Écrire au propriétaire',
+                  proprietaire
+                      ? 'Écrire au locataire'
+                      : 'Écrire au propriétaire',
                 ),
               ),
               if (r.peutAnnuler) ...[
@@ -412,14 +510,18 @@ class _DetailReservationState extends State<DetailReservation> {
                           );
                           if (motif != null) _executer('annuler', motif: motif);
                         },
-                  style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                  ),
                   icon: const Icon(RemixIcons.close_circle_line),
                   label: const Text('Annuler la réservation'),
                 ),
               ],
               TextButton.icon(
                 onPressed: () => signaler(context, reservationId: r.id),
-                style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey.shade700,
+                ),
                 icon: const Icon(RemixIcons.flag_line),
                 label: const Text('Signaler un problème / ouvrir un litige'),
               ),

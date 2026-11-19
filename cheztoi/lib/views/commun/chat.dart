@@ -60,7 +60,8 @@ class _ConversationsState extends State<Conversations> {
             return const EtatVide(
               icone: RemixIcons.chat_smile_2_line,
               titre: 'Aucune conversation',
-              message: 'Contactez un propriétaire depuis la fiche d’un logement '
+              message:
+                  'Contactez un propriétaire depuis la fiche d’un logement '
                   'pour démarrer une discussion.',
             );
           }
@@ -78,8 +79,9 @@ class _ConversationsState extends State<Conversations> {
                   title: Text(
                     c.interlocuteur.nomComplet,
                     style: TextStyle(
-                      fontWeight:
-                          c.nonLus > 0 ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: c.nonLus > 0
+                          ? FontWeight.bold
+                          : FontWeight.w500,
                     ),
                   ),
                   subtitle: Column(
@@ -108,7 +110,10 @@ class _ConversationsState extends State<Conversations> {
                     children: [
                       Text(
                         formatMoment(c.dernierMessageLe),
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       if (c.nonLus > 0)
@@ -233,7 +238,10 @@ class _ChatPageState extends State<ChatPage> {
     );
     if (fichier == null) return;
     await _envoyer(
-      image: FichierEnvoi(octets: await fichier.readAsBytes(), nom: fichier.name),
+      image: FichierEnvoi(
+        octets: await fichier.readAsBytes(),
+        nom: fichier.name,
+      ),
     );
   }
 
@@ -243,7 +251,8 @@ class _ChatPageState extends State<ChatPage> {
         !await confirmer(
           context,
           titre: 'Bloquer ${c.interlocuteur.nomComplet} ?',
-          message: 'Plus aucun message ne pourra être échangé dans cette '
+          message:
+              'Plus aucun message ne pourra être échangé dans cette '
               'conversation tant que vous ne l’aurez pas débloquée.',
           action: 'Bloquer',
           danger: true,
@@ -284,15 +293,20 @@ class _ChatPageState extends State<ChatPage> {
           border: moi ? null : Border.all(color: Colors.grey.shade200),
         ),
         child: Column(
-          crossAxisAlignment:
-              moi ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: moi
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             if (m.image != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: ImageLogement(url: m.image, hauteur: 180, largeur: 220),
+                  child: ImageLogement(
+                    url: m.image,
+                    hauteur: 180,
+                    largeur: 220,
+                  ),
                 ),
               ),
             if (m.texte.isNotEmpty)
@@ -399,17 +413,17 @@ class _ChatPageState extends State<ChatPage> {
             child: _chargement
                 ? const Chargement()
                 : _messages.isEmpty
-                    ? const EtatVide(
-                        icone: RemixIcons.chat_smile_2_line,
-                        titre: 'Dites bonjour 👋',
-                        message: 'Posez vos questions sur le logement.',
-                      )
-                    : ListView.builder(
-                        controller: _defilement,
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) => _bulle(_messages[i]),
-                      ),
+                ? const EtatVide(
+                    icone: RemixIcons.chat_smile_2_line,
+                    titre: 'Dites bonjour 👋',
+                    message: 'Posez vos questions sur le logement.',
+                  )
+                : ListView.builder(
+                    controller: _defilement,
+                    padding: const EdgeInsets.all(12),
+                    itemCount: _messages.length,
+                    itemBuilder: (_, i) => _bulle(_messages[i]),
+                  ),
           ),
           if (_bloquee)
             Container(

@@ -342,7 +342,7 @@ class AdminSignalementSerializer(SignalementSerializer):
             return f"Avis #{obj.avis_id}"
         if obj.conversation_id:
             return f"Conversation #{obj.conversation_id}"
-        return ""
+        return "Demande d'assistance"
 
 
 class AdminSignalementListView(generics.ListAPIView):

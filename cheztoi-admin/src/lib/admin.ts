@@ -1,4 +1,5 @@
-import { appelApi } from "@/lib/utilisateurs";
+import { lireToken } from "@/lib/auth";
+import { appelApi, ErreurApi } from "@/lib/utilisateurs";
 
 // ------------------------------------------------------------------ Types
 
@@ -311,3 +312,54 @@ export const modifierUtilisateur = (
     method: "PATCH",
     body: JSON.stringify(champs),
   });
+
+// --------------------------------------------------------- Justificatifs
+
+export type Justificatif = {
+  id: number;
+  type: string;
+  type_libelle: string;
+  nom_fichier: string;
+  statut: string;
+  statut_libelle: string;
+  motif: string;
+  cree_le: string;
+  traite_le: string | null;
+  utilisateur: {
+    id: number;
+    nom_complet: string;
+    email: string;
+    phone: string;
+    role: string;
+    verified: boolean;
+  };
+};
+
+export const statutsJustificatif: Record<string, string> = {
+  en_attente: "En attente",
+  accepte: "Accepté",
+  refuse: "Refusé",
+};
+
+export const listerJustificatifs = (statut?: string) =>
+  appelApi<Justificatif[]>(`${BASE}/justificatifs/${requete({ statut })}`);
+
+export const traiterJustificatif = (id: number, statut: "accepte" | "refuse", motif = "") =>
+  appelApi<Justificatif>(`${BASE}/justificatifs/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify({ statut, motif }),
+  });
+
+/// Le document n'a pas d'URL publique : on le télécharge avec le jeton
+/// puis on l'ouvre dans un nouvel onglet.
+export async function ouvrirJustificatif(id: number): Promise<void> {
+  const jeton = lireToken();
+  const reponse = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}${BASE}/justificatifs/${id}/fichier/`,
+    { headers: jeton ? { Authorization: `Bearer ${jeton}` } : {} },
+  );
+  if (!reponse.ok) throw new ErreurApi("Document introuvable.", reponse.status);
+  const url = URL.createObjectURL(await reponse.blob());
+  window.open(url, "_blank", "noopener");
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}

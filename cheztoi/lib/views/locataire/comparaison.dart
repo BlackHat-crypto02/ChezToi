@@ -31,21 +31,41 @@ class Comparaison extends StatelessWidget {
           // Les équipements présents dans au moins un logement.
           final equipements = <String>{
             for (final l in logements) ...l.equipements.map((e) => e.nom),
-          }.toList()
-            ..sort();
+          }.toList()..sort();
 
           final lignes = <(String, String Function(Logement))>[
-            ('Prix', (l) => '${formatPrix(l.prix, l.devise)} / ${l.periodiciteLibelle}'),
+            (
+              'Prix',
+              (l) =>
+                  '${formatPrix(l.prix, l.devise)} / ${l.periodiciteLibelle}',
+            ),
             ('Type', (l) => l.typeLibelle),
             ('Localisation', (l) => l.localisation),
-            ('Superficie', (l) => l.superficie == null ? '—' : '${l.superficie} m²'),
+            (
+              'Superficie',
+              (l) => l.superficie == null ? '—' : '${l.superficie} m²',
+            ),
             ('Chambres', (l) => '${l.chambres}'),
             ('Salles de bain', (l) => '${l.sallesDeBain}'),
             ('Meublé', (l) => l.meuble ? 'Oui' : 'Non'),
-            ('Caution', (l) => l.caution > 0 ? formatPrix(l.caution, l.devise) : '—'),
-            ('Avance', (l) => l.avance > 0 ? formatPrix(l.avance, l.devise) : '—'),
-            ('Réservation', (l) => l.reservationInstantanee ? 'Instantanée' : 'Sur demande'),
-            ('Note', (l) => l.noteMoyenne == null ? '—' : '${l.noteMoyenne}/5 (${l.nombreAvis})'),
+            (
+              'Caution',
+              (l) => l.caution > 0 ? formatPrix(l.caution, l.devise) : '—',
+            ),
+            (
+              'Avance',
+              (l) => l.avance > 0 ? formatPrix(l.avance, l.devise) : '—',
+            ),
+            (
+              'Réservation',
+              (l) => l.reservationInstantanee ? 'Instantanée' : 'Sur demande',
+            ),
+            (
+              'Note',
+              (l) => l.noteMoyenne == null
+                  ? '—'
+                  : '${l.noteMoyenne}/5 (${l.nombreAvis})',
+            ),
             ('Vérifiée', (l) => l.verifie ? 'Oui' : 'Non'),
             ('Visite 360°', (l) => l.aVisiteVirtuelle ? 'Oui' : 'Non'),
             for (final nom in equipements)
@@ -53,14 +73,14 @@ class Comparaison extends StatelessWidget {
           ];
 
           Widget cellule(Widget enfant, {bool entete = false}) => Container(
-                width: _largeur,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-                  color: entete ? Colors.white : null,
-                ),
-                child: enfant,
-              );
+            width: _largeur,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              color: entete ? Colors.white : null,
+            ),
+            child: enfant,
+          );
 
           return SingleChildScrollView(
             child: SingleChildScrollView(
@@ -101,7 +121,10 @@ class Comparaison extends StatelessWidget {
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
-                                    child: ImageLogement(url: l.photo, hauteur: 90),
+                                    child: ImageLogement(
+                                      url: l.photo,
+                                      hauteur: 90,
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(

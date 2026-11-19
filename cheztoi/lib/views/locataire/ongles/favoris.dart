@@ -35,7 +35,10 @@ class _FavorisState extends State<Favoris> {
       } else if (_selection.length < 4) {
         _selection.add(id);
       } else {
-        afficherMessage(context, 'Vous pouvez comparer 4 logements au maximum.');
+        afficherMessage(
+          context,
+          'Vous pouvez comparer 4 logements au maximum.',
+        );
       }
     });
   }
@@ -53,7 +56,9 @@ class _FavorisState extends State<Favoris> {
     return Scaffold(
       backgroundColor: Styles.fond,
       appBar: AppBar(
-        title: Text(_selectionActive ? 'Choisir 2 à 4 logements' : 'Mes favoris'),
+        title: Text(
+          _selectionActive ? 'Choisir 2 à 4 logements' : 'Mes favoris',
+        ),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         automaticallyImplyLeading: widget.modeComparaison,

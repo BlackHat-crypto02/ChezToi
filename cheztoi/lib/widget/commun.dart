@@ -155,11 +155,11 @@ class Chargement extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(color: Styles.violet),
-        ),
-      );
+    child: Padding(
+      padding: EdgeInsets.all(32),
+      child: CircularProgressIndicator(color: Styles.violet),
+    ),
+  );
 }
 
 class EtatVide extends StatelessWidget {
@@ -231,19 +231,23 @@ class EtatVide extends StatelessWidget {
 }
 
 class EtatErreur extends StatelessWidget {
-  const EtatErreur({super.key, required this.erreur, required this.onReessayer});
+  const EtatErreur({
+    super.key,
+    required this.erreur,
+    required this.onReessayer,
+  });
 
   final Object erreur;
   final VoidCallback onReessayer;
 
   @override
   Widget build(BuildContext context) => EtatVide(
-        icone: RemixIcons.wifi_off_line,
-        titre: 'Oups…',
-        message: messageErreur(erreur),
-        action: 'Réessayer',
-        onAction: onReessayer,
-      );
+    icone: RemixIcons.wifi_off_line,
+    titre: 'Oups…',
+    message: messageErreur(erreur),
+    action: 'Réessayer',
+    onAction: onReessayer,
+  );
 }
 
 /// Charge une donnée et affiche chargement / erreur / contenu.
@@ -252,7 +256,7 @@ class Chargeur<T> extends StatefulWidget {
 
   final Future<T> Function() charger;
   final Widget Function(BuildContext context, T donnees, VoidCallback recharger)
-      builder;
+  builder;
 
   @override
   State<Chargeur<T>> createState() => _ChargeurState<T>();
@@ -418,7 +422,11 @@ Color couleurStatut(String statut) {
 }
 
 class StatutPastille extends StatelessWidget {
-  const StatutPastille({super.key, required this.statut, required this.libelle});
+  const StatutPastille({
+    super.key,
+    required this.statut,
+    required this.libelle,
+  });
 
   final String statut;
   final String libelle;
@@ -444,8 +452,8 @@ class Etoiles extends StatelessWidget {
             note >= i
                 ? RemixIcons.star_fill
                 : (note >= i - 0.5
-                    ? RemixIcons.star_half_fill
-                    : RemixIcons.star_line),
+                      ? RemixIcons.star_half_fill
+                      : RemixIcons.star_line),
             size: taille,
             color: Colors.amber.shade700,
           ),
@@ -471,10 +479,8 @@ class TitreSection extends StatelessWidget {
             texte,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Styles.texte,
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(color: Styles.texte, fontWeight: FontWeight.bold),
           ),
         ),
         if (action != null)
@@ -854,11 +860,15 @@ class SectionLogements extends StatelessWidget {
     required this.titre,
     required this.logements,
     this.onVoirTout,
+    this.action = 'Voir tout',
   });
 
   final String titre;
   final List<Logement> logements;
   final VoidCallback? onVoirTout;
+
+  /// Libellé du lien à droite du titre.
+  final String action;
 
   @override
   Widget build(BuildContext context) {
@@ -872,7 +882,7 @@ class SectionLogements extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TitreSection(
               titre,
-              action: onVoirTout == null ? null : 'Voir tout',
+              action: onVoirTout == null ? null : action,
               onAction: onVoirTout,
             ),
           ),
@@ -919,15 +929,15 @@ InputDecoration decorationChamp(
 }
 
 ButtonStyle styleBoutonPrincipal() => FilledButton.styleFrom(
-      backgroundColor: Styles.violet,
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-    );
+  backgroundColor: Styles.violet,
+  foregroundColor: Colors.white,
+  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+);
 
 ButtonStyle styleBoutonSecondaire() => OutlinedButton.styleFrom(
-      foregroundColor: Styles.violet,
-      side: const BorderSide(color: Styles.violet),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-    );
+  foregroundColor: Styles.violet,
+  side: const BorderSide(color: Styles.violet),
+  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+);

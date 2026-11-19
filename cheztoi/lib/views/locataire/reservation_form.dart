@@ -8,9 +8,18 @@ import 'package:remixicon/remixicon.dart';
 /// Choix de la période, estimation du montant et envoi de la demande.
 /// Renvoie `true` à l'écran précédent quand la réservation est créée.
 class ReservationForm extends StatefulWidget {
-  const ReservationForm({super.key, required this.logement});
+  const ReservationForm({
+    super.key,
+    required this.logement,
+    this.periodeInitiale,
+    this.prolongation = false,
+  });
 
   final Logement logement;
+
+  /// Période proposée à l'ouverture (prolongation d'un séjour).
+  final DateTimeRange? periodeInitiale;
+  final bool prolongation;
 
   @override
   State<ReservationForm> createState() => _ReservationFormState();
@@ -18,7 +27,7 @@ class ReservationForm extends StatefulWidget {
 
 class _ReservationFormState extends State<ReservationForm> {
   final _message = TextEditingController();
-  DateTimeRange? _periode;
+  late DateTimeRange? _periode = widget.periodeInitiale;
   int _personnes = 1;
   Estimation? _estimation;
   String? _erreurEstimation;
@@ -31,9 +40,16 @@ class _ReservationFormState extends State<ReservationForm> {
   @override
   void initState() {
     super.initState();
-    ChezToiApi.instance.indisponibilites(l.id).then((periodes) {
-      if (mounted) setState(() => _occupees = periodes);
-    }).catchError((_) {});
+    ChezToiApi.instance
+        .indisponibilites(l.id)
+        .then((periodes) {
+          if (mounted) setState(() => _occupees = periodes);
+        })
+        .catchError((_) {});
+    if (widget.prolongation) {
+      _message.text = 'Demande de prolongation de mon séjour.';
+    }
+    if (_periode != null) _estimer();
   }
 
   @override
@@ -44,27 +60,28 @@ class _ReservationFormState extends State<ReservationForm> {
 
   /// Durée proposée par défaut selon la périodicité du prix.
   Duration get _dureeParDefaut => switch (l.periodicite) {
-        'nuit' => const Duration(days: 2),
-        'semaine' => const Duration(days: 7),
-        'annee' => const Duration(days: 365),
-        _ => const Duration(days: 30),
-      };
+    'nuit' => const Duration(days: 2),
+    'semaine' => const Duration(days: 7),
+    'annee' => const Duration(days: 365),
+    _ => const Duration(days: 30),
+  };
 
   Future<void> _choisirPeriode() async {
-    final demain = DateUtils.dateOnly(DateTime.now()).add(const Duration(days: 1));
+    final demain = DateUtils.dateOnly(DateTime.now())
+        .add(const Duration(days: 1));
     final choix = await showDateRangePicker(
       context: context,
       firstDate: DateUtils.dateOnly(DateTime.now()),
       lastDate: DateTime.now().add(const Duration(days: 730)),
-      initialDateRange: _periode ??
+      initialDateRange:
+          _periode ??
           DateTimeRange(start: demain, end: demain.add(_dureeParDefaut)),
       helpText: 'Dates d’arrivée et de départ',
       saveText: 'Valider',
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-                primary: Styles.violet,
-              ),
+          colorScheme: Theme.of(context).colorScheme
+              .copyWith(primary: Styles.violet),
         ),
         child: child!,
       ),
@@ -122,12 +139,14 @@ class _ReservationFormState extends State<ReservationForm> {
             color: confirmee ? Colors.green : Styles.violet,
             size: 48,
           ),
-          title: Text(confirmee ? 'Réservation confirmée !' : 'Demande envoyée'),
+          title: Text(
+            confirmee ? 'Réservation confirmée !' : 'Demande envoyée',
+          ),
           content: Text(
             confirmee
                 ? 'Votre séjour est réservé. Retrouvez-le dans « Mes réservations ».'
                 : 'Le propriétaire va étudier votre demande. Vous serez notifié '
-                    'dès qu’il aura répondu.',
+                      'dès qu’il aura répondu.',
           ),
           actions: [
             FilledButton(
@@ -169,7 +188,13 @@ class _ReservationFormState extends State<ReservationForm> {
     return Scaffold(
       backgroundColor: Styles.fond,
       appBar: AppBar(
-        title: Text(l.reservationInstantanee ? 'Réserver' : 'Demande de réservation'),
+        title: Text(
+          widget.prolongation
+              ? 'Prolonger le séjour'
+              : (l.reservationInstantanee
+                    ? 'Réserver'
+                    : 'Demande de réservation'),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
@@ -199,7 +224,7 @@ class _ReservationFormState extends State<ReservationForm> {
                       periode == null
                           ? 'Choisir les dates'
                           : 'Du ${formatDate(periode.start)} au ${formatDate(periode.end)}'
-                              ' · ${periode.duration.inDays} jour(s)',
+                                ' · ${periode.duration.inDays} jour(s)',
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -280,7 +305,8 @@ class _ReservationFormState extends State<ReservationForm> {
                     '${l.periodiciteLibelle}',
                     e.montantLocation,
                   ),
-                  if (e.caution > 0) _ligne('Caution (remboursable)', e.caution),
+                  if (e.caution > 0)
+                    _ligne('Caution (remboursable)', e.caution),
                   if (e.avance > 0) _ligne('Avance', e.avance),
                   if (e.frais > 0) _ligne('Frais et charges', e.frais),
                   const Divider(height: 20),
@@ -292,9 +318,9 @@ class _ReservationFormState extends State<ReservationForm> {
             Text(
               e.instantanee
                   ? 'Ce logement est en réservation instantanée : '
-                      'votre séjour est confirmé immédiatement.'
+                        'votre séjour est confirmé immédiatement.'
                   : 'Le paiement se fait directement avec le propriétaire, '
-                      'après acceptation de votre demande.',
+                        'après acceptation de votre demande.',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
@@ -310,8 +336,8 @@ class _ReservationFormState extends State<ReservationForm> {
               _envoi
                   ? 'Envoi…'
                   : (l.reservationInstantanee
-                      ? 'Confirmer la réservation'
-                      : 'Envoyer la demande'),
+                        ? 'Confirmer la réservation'
+                        : 'Envoyer la demande'),
             ),
           ),
         ),

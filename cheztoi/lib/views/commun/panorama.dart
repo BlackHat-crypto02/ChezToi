@@ -56,7 +56,11 @@ class _VisiteVirtuelleState extends State<VisiteVirtuelle> {
               ),
               child: const Row(
                 children: [
-                  Icon(RemixIcons.drag_move_2_line, color: Colors.white70, size: 18),
+                  Icon(
+                    RemixIcons.drag_move_2_line,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(

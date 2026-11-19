@@ -35,10 +35,12 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
   late final _avance = _nombre(_l?.avance);
   late final _frais = _nombre(_l?.fraisSupplementaires);
   late final _charges = _nombre(_l?.charges);
-  late final _conditionsPaiement =
-      TextEditingController(text: _l?.conditionsPaiement);
-  late final _conditionsAnnulation =
-      TextEditingController(text: _l?.conditionsAnnulation);
+  late final _conditionsPaiement = TextEditingController(
+    text: _l?.conditionsPaiement,
+  );
+  late final _conditionsAnnulation = TextEditingController(
+    text: _l?.conditionsAnnulation,
+  );
   late final _region = TextEditingController(text: _l?.region);
   late final _ville = TextEditingController(text: _l?.ville);
   late final _commune = TextEditingController(text: _l?.commune);
@@ -63,23 +65,42 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
   List<Equipement> _listeEquipements = const [];
   bool _envoi = false;
 
-  TextEditingController _nombre(int? valeur) =>
-      TextEditingController(text: valeur == null || valeur == 0 ? '' : '$valeur');
+  TextEditingController _nombre(int? valeur) => TextEditingController(
+    text: valeur == null || valeur == 0 ? '' : '$valeur',
+  );
 
   @override
   void initState() {
     super.initState();
-    ChezToiApi.instance.equipements().then((liste) {
-      if (mounted) setState(() => _listeEquipements = liste);
-    }).catchError((_) {});
+    ChezToiApi.instance
+        .equipements()
+        .then((liste) {
+          if (mounted) setState(() => _listeEquipements = liste);
+        })
+        .catchError((_) {});
   }
 
   @override
   void dispose() {
     for (final c in [
-      _titre, _description, _superficie, _etagesBatiment, _etage, _capacite,
-      _prix, _caution, _avance, _frais, _charges, _conditionsPaiement,
-      _conditionsAnnulation, _region, _ville, _commune, _quartier, _adresse,
+      _titre,
+      _description,
+      _superficie,
+      _etagesBatiment,
+      _etage,
+      _capacite,
+      _prix,
+      _caution,
+      _avance,
+      _frais,
+      _charges,
+      _conditionsPaiement,
+      _conditionsAnnulation,
+      _region,
+      _ville,
+      _commune,
+      _quartier,
+      _adresse,
     ]) {
       c.dispose();
     }
@@ -90,7 +111,11 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
 
   Future<void> _enregistrer() async {
     if (!_formulaire.currentState!.validate()) {
-      afficherMessage(context, 'Vérifiez les champs signalés en rouge.', erreur: true);
+      afficherMessage(
+        context,
+        'Vérifiez les champs signalés en rouge.',
+        erreur: true,
+      );
       return;
     }
     setState(() => _envoi = true);
@@ -167,7 +192,10 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
               const SizedBox(width: 8),
               Text(
                 titre,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -226,7 +254,8 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
 
   @override
   Widget build(BuildContext context) {
-    String? requis(String? v) => (v ?? '').trim().isEmpty ? 'Obligatoire' : null;
+    String? requis(String? v) =>
+        (v ?? '').trim().isEmpty ? 'Obligatoire' : null;
     return Scaffold(
       backgroundColor: Styles.fond,
       appBar: AppBar(
@@ -252,7 +281,10 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
                   aide: 'Atouts, environnement, transports, règles…',
                 ),
               ),
-              const Text('Type de logement', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text(
+                'Type de logement',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -273,20 +305,46 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
                 value: _meuble,
                 onChanged: (v) => setState(() => _meuble = v),
               ),
-              _compteur('Chambres', _chambres, (v) => setState(() => _chambres = v)),
+              _compteur(
+                'Chambres',
+                _chambres,
+                (v) => setState(() => _chambres = v),
+              ),
               _compteur('Salons', _salons, (v) => setState(() => _salons = v)),
-              _compteur('Salles de bain', _sdb, (v) => setState(() => _sdb = v)),
-              _compteur('Toilettes', _toilettes, (v) => setState(() => _toilettes = v)),
+              _compteur(
+                'Salles de bain',
+                _sdb,
+                (v) => setState(() => _sdb = v),
+              ),
+              _compteur(
+                'Toilettes',
+                _toilettes,
+                (v) => setState(() => _toilettes = v),
+              ),
               Row(
                 children: [
-                  Expanded(child: _champNombre(_superficie, 'Superficie', suffixe: 'm²')),
+                  Expanded(
+                    child: _champNombre(
+                      _superficie,
+                      'Superficie',
+                      suffixe: 'm²',
+                    ),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: _champNombre(_capacite, 'Capacité', suffixe: 'pers.')),
+                  Expanded(
+                    child: _champNombre(
+                      _capacite,
+                      'Capacité',
+                      suffixe: 'pers.',
+                    ),
+                  ),
                 ],
               ),
               Row(
                 children: [
-                  Expanded(child: _champNombre(_etagesBatiment, 'Étages du bâtiment')),
+                  Expanded(
+                    child: _champNombre(_etagesBatiment, 'Étages du bâtiment'),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(child: _champNombre(_etage, 'Étage du logement')),
                 ],
@@ -307,71 +365,97 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
                         selectedColor: Styles.violet.withValues(alpha: 0.15),
                         checkmarkColor: Styles.violet,
                         onSelected: (oui) => setState(() {
-                          oui ? _equipements.add(e.id) : _equipements.remove(e.id);
+                          oui
+                              ? _equipements.add(e.id)
+                              : _equipements.remove(e.id);
                         }),
                       ),
                   ],
                 ),
             ]),
-            _section('Tarifs et conditions', RemixIcons.money_dollar_circle_line, [
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: _champNombre(_prix, 'Prix', obligatoire: true, suffixe: 'FCFA'),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _periodicite,
-                      decoration: decorationChamp('Par'),
-                      items: const [
-                        DropdownMenuItem(value: 'nuit', child: Text('Nuit')),
-                        DropdownMenuItem(value: 'semaine', child: Text('Semaine')),
-                        DropdownMenuItem(value: 'mois', child: Text('Mois')),
-                        DropdownMenuItem(value: 'annee', child: Text('Année')),
-                      ],
-                      onChanged: (v) => setState(() => _periodicite = v ?? 'mois'),
+            _section(
+              'Tarifs et conditions',
+              RemixIcons.money_dollar_circle_line,
+              [
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: _champNombre(
+                        _prix,
+                        'Prix',
+                        obligatoire: true,
+                        suffixe: 'FCFA',
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(child: _champNombre(_caution, 'Caution', suffixe: 'FCFA')),
-                  const SizedBox(width: 10),
-                  Expanded(child: _champNombre(_avance, 'Avance', suffixe: 'FCFA')),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(child: _champNombre(_frais, 'Frais', suffixe: 'FCFA')),
-                  const SizedBox(width: 10),
-                  Expanded(child: _champNombre(_charges, 'Charges', suffixe: 'FCFA')),
-                ],
-              ),
-              TextFormField(
-                controller: _conditionsPaiement,
-                maxLines: 2,
-                decoration: decorationChamp('Conditions de paiement'),
-              ),
-              TextFormField(
-                controller: _conditionsAnnulation,
-                maxLines: 2,
-                decoration: decorationChamp('Conditions d’annulation'),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                activeThumbColor: Styles.violet,
-                title: const Text('Réservation instantanée'),
-                subtitle: const Text(
-                  'Les réservations sont confirmées sans votre validation.',
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _periodicite,
+                        decoration: decorationChamp('Par'),
+                        items: const [
+                          DropdownMenuItem(value: 'nuit', child: Text('Nuit')),
+                          DropdownMenuItem(
+                            value: 'semaine',
+                            child: Text('Semaine'),
+                          ),
+                          DropdownMenuItem(value: 'mois', child: Text('Mois')),
+                          DropdownMenuItem(
+                            value: 'annee',
+                            child: Text('Année'),
+                          ),
+                        ],
+                        onChanged: (v) =>
+                            setState(() => _periodicite = v ?? 'mois'),
+                      ),
+                    ),
+                  ],
                 ),
-                value: _instantanee,
-                onChanged: (v) => setState(() => _instantanee = v),
-              ),
-            ]),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _champNombre(_caution, 'Caution', suffixe: 'FCFA'),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _champNombre(_avance, 'Avance', suffixe: 'FCFA'),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _champNombre(_frais, 'Frais', suffixe: 'FCFA'),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _champNombre(_charges, 'Charges', suffixe: 'FCFA'),
+                    ),
+                  ],
+                ),
+                TextFormField(
+                  controller: _conditionsPaiement,
+                  maxLines: 2,
+                  decoration: decorationChamp('Conditions de paiement'),
+                ),
+                TextFormField(
+                  controller: _conditionsAnnulation,
+                  maxLines: 2,
+                  decoration: decorationChamp('Conditions d’annulation'),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  activeThumbColor: Styles.violet,
+                  title: const Text('Réservation instantanée'),
+                  subtitle: const Text(
+                    'Les réservations sont confirmées sans votre validation.',
+                  ),
+                  value: _instantanee,
+                  onChanged: (v) => setState(() => _instantanee = v),
+                ),
+              ],
+            ),
             _section('Localisation', RemixIcons.map_pin_line, [
               TextFormField(
                 controller: _ville,
@@ -410,7 +494,9 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
                 onPressed: _choisirPosition,
                 style: styleBoutonSecondaire(),
                 icon: Icon(
-                  _position == null ? RemixIcons.map_pin_add_line : RemixIcons.map_pin_2_fill,
+                  _position == null
+                      ? RemixIcons.map_pin_add_line
+                      : RemixIcons.map_pin_2_fill,
                 ),
                 label: Text(
                   _position == null

@@ -13,9 +13,14 @@ Future<void> nouvelleAnnonce(BuildContext context) async {
     MaterialPageRoute<Logement>(builder: (_) => const LogementFormulaire()),
   );
   if (logement == null || !context.mounted) return;
-  afficherMessage(context, 'Brouillon enregistré. Ajoutez vos photos puis soumettez-le.');
+  afficherMessage(
+    context,
+    'Brouillon enregistré. Ajoutez vos photos puis soumettez-le.',
+  );
   await Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => GestionLogement(logementId: logement.id)),
+    MaterialPageRoute<void>(
+      builder: (_) => GestionLogement(logementId: logement.id),
+    ),
   );
 }
 
@@ -105,7 +110,9 @@ class _MesLogementsState extends State<MesLogements> {
                       selected: _filtre == null,
                       onSelected: (_) => setState(() => _filtre = null),
                     ),
-                    for (final s in Libelles.statutsLogement.keys.where(statuts.contains))
+                    for (final s in Libelles.statutsLogement.keys.where(
+                      statuts.contains,
+                    ))
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: ChoiceChip(
@@ -137,7 +144,10 @@ class _MesLogementsState extends State<MesLogements> {
                           padding: const EdgeInsets.all(8),
                           child: Align(
                             alignment: Alignment.topRight,
-                            child: StatutPastille(statut: l.statut, libelle: l.statutLibelle),
+                            child: StatutPastille(
+                              statut: l.statut,
+                              libelle: l.statutLibelle,
+                            ),
                           ),
                         ),
                       );

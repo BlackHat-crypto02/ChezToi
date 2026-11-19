@@ -1,6 +1,7 @@
 import 'package:cheztoi/models/modeles.dart';
 import 'package:cheztoi/services/auth_service.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/services/historique.dart';
 import 'package:cheztoi/views/commun/notifications.dart';
 import 'package:cheztoi/views/commun/profil.dart';
 import 'package:cheztoi/views/commun/reservations.dart';
@@ -52,6 +53,23 @@ class Accueil extends StatefulWidget {
 class _AccueilState extends State<Accueil> {
   final _rechercheC = TextEditingController();
   late Future<DonneesAccueil> _futur = ChezToiApi.instance.accueil();
+  List<Logement> _consultes = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _chargerConsultes();
+  }
+
+  Future<void> _chargerConsultes() async {
+    try {
+      final ids = await Historique.lire();
+      final logements = await ChezToiApi.instance.logementsParIds(
+        ids.take(10).toList(),
+      );
+      if (mounted) setState(() => _consultes = logements);
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -62,15 +80,15 @@ class _AccueilState extends State<Accueil> {
   Future<void> _recharger() async {
     final futur = ChezToiApi.instance.accueil();
     setState(() => _futur = futur);
+    _chargerConsultes();
     await futur.catchError((_) => const DonneesAccueil());
   }
 
   void _rechercher(Map<String, dynamic> criteres) =>
       widget.onRecherche?.call(criteres);
 
-  void _ouvrir(Widget page) => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => page),
-      );
+  void _ouvrir(Widget page) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
 
   Widget _banniere({
     required String titre,
@@ -177,7 +195,8 @@ class _AccueilState extends State<Accueil> {
                 const SizedBox(width: 14),
                 _banniere(
                   titre: 'Logements disponibles à $villePrincipale',
-                  sousTitre: '${a.total} annonce(s) publiée(s) sur la plateforme.',
+                  sousTitre:
+                      '${a.total} annonce(s) publiée(s) sur la plateforme.',
                   action: 'Voir les annonces',
                   icone: RemixIcons.building_3_line,
                   debut: const Color(0xFF1D6FE8),
@@ -268,6 +287,15 @@ class _AccueilState extends State<Accueil> {
         ),
         const SizedBox(height: 28),
 
+        SectionLogements(
+          titre: 'Récemment consultés',
+          logements: _consultes,
+          action: 'Effacer',
+          onVoirTout: () async {
+            await Historique.effacer();
+            if (mounted) setState(() => _consultes = const []);
+          },
+        ),
         SectionLogements(
           titre: 'Recommandés pour vous',
           logements: a.recommandes,
@@ -400,7 +428,8 @@ class _AccueilState extends State<Accueil> {
                       widget.prenom == null || widget.prenom!.isEmpty
                           ? 'Bonjour 👋'
                           : 'Bonjour ${widget.prenom} 👋',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             color: Styles.texte,
                             fontWeight: FontWeight.bold,
                           ),
@@ -408,9 +437,7 @@ class _AccueilState extends State<Accueil> {
                     const SizedBox(height: 4),
                     Text(
                       'Trouvez le logement fait pour vous.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
+                      style: Theme.of(context).textTheme.bodyMedium
                           ?.copyWith(color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 20),

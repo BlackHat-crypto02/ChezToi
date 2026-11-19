@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Cheztoi</string>
+	<string>ChezToi</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -72,5 +72,7 @@
 	<string>ChezToi utilise l’appareil photo pour photographier vos logements.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>ChezToi utilise les capteurs de mouvement pour explorer les visites 360°.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ChezToi utilise votre position pour afficher les logements autour de vous.</string>
 </dict>
 </plist>

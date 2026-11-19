@@ -486,3 +486,19 @@ class EvolutionsMobileTests(APITestCase):
         self.assertEqual(r.data["count"], 2)
         r = self.client.get("/api/v1/logements/", {"ids": str(autre.id)})
         self.assertEqual(r.data["count"], 1)
+
+    def test_demande_assistance_sans_cible(self):
+        self.client.force_authenticate(self.locataire)
+        r = self.client.post("/api/v1/signalements/", {"motif": "fraude"}, format="json")
+        self.assertEqual(r.status_code, 400)
+        r = self.client.post("/api/v1/signalements/", {"motif": "autre"}, format="json")
+        self.assertEqual(r.status_code, 400)
+        r = self.client.post(
+            "/api/v1/signalements/",
+            {"motif": "autre", "description": "Je n'arrive pas à payer."},
+            format="json",
+        )
+        self.assertEqual(r.status_code, 201, r.data)
+        self.client.force_authenticate(self.admin)
+        r = self.client.get("/api/v1/admin/signalements/")
+        self.assertEqual(r.data[0]["resume_cible"], "Demande d'assistance")

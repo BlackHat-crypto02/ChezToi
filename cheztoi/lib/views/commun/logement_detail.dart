@@ -1,16 +1,19 @@
 import 'package:cheztoi/models/modeles.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
+import 'package:cheztoi/services/historique.dart';
 import 'package:cheztoi/services/session.dart';
 import 'package:cheztoi/views/commun/carte_widgets.dart';
 import 'package:cheztoi/views/commun/chat.dart';
 import 'package:cheztoi/views/commun/panorama.dart';
 import 'package:cheztoi/views/commun/signalement.dart';
+import 'package:cheztoi/views/commun/video.dart';
 import 'package:cheztoi/views/locataire/reservation_form.dart';
 import 'package:cheztoi/widget/commun.dart';
 import 'package:cheztoi/widget/styles.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Fiche détaillée d'un logement (section 4.6 du cahier des charges).
 class LogementDetail extends StatelessWidget {
@@ -51,13 +54,44 @@ class _FicheState extends State<_Fiche> {
   bool get _estMonLogement => l.proprietaire?.id == Session.id;
 
   @override
+  void initState() {
+    super.initState();
+    if (!_estMonLogement) Historique.ajouter(l.id);
+  }
+
+  Future<void> _ouvrirLien(Uri lien, String echec) async {
+    try {
+      if (!await launchUrl(lien, mode: LaunchMode.externalApplication)) {
+        throw Exception();
+      }
+    } catch (_) {
+      if (mounted) afficherMessage(context, echec, erreur: true);
+    }
+  }
+
+  /// Itinéraire dans l'application de cartes du téléphone (Google Maps, etc.).
+  void _itineraire() => _ouvrirLien(
+    Uri.https('www.google.com', '/maps/dir/', {
+      'api': '1',
+      'destination': '${l.latitude},${l.longitude}',
+    }),
+    'Aucune application de cartes disponible.',
+  );
+
+  void _appeler() => _ouvrirLien(
+    Uri(scheme: 'tel', path: l.telephoneProprietaire.replaceAll(' ', '')),
+    'Impossible de lancer l’appel.',
+  );
+
+  @override
   void dispose() {
     _pages.dispose();
     super.dispose();
   }
 
   Future<void> _partager() async {
-    final texte = '${l.titre} — ${formatPrix(l.prix, l.devise)} / '
+    final texte =
+        '${l.titre} — ${formatPrix(l.prix, l.devise)} / '
         '${l.periodiciteLibelle}\n${l.localisation}\n'
         'Découvrez ce logement sur ChezToi.';
     await SharePlus.instance.share(ShareParams(text: texte, subject: l.titre));
@@ -200,14 +234,29 @@ class _FicheState extends State<_Fiche> {
 
   Widget _caracteristiques() {
     final elements = <(IconData, String)>[
-      (RemixIcons.hotel_bed_line, '${l.chambres} chambre${l.chambres > 1 ? 's' : ''}'),
-      if (l.salons > 0) (RemixIcons.sofa_line, '${l.salons} salon${l.salons > 1 ? 's' : ''}'),
-      (RemixIcons.drop_line, '${l.sallesDeBain} salle${l.sallesDeBain > 1 ? 's' : ''} de bain'),
-      if (l.toilettes > 0) (RemixIcons.door_line, '${l.toilettes} toilette${l.toilettes > 1 ? 's' : ''}'),
+      (
+        RemixIcons.hotel_bed_line,
+        '${l.chambres} chambre${l.chambres > 1 ? 's' : ''}',
+      ),
+      if (l.salons > 0)
+        (RemixIcons.sofa_line, '${l.salons} salon${l.salons > 1 ? 's' : ''}'),
+      (
+        RemixIcons.drop_line,
+        '${l.sallesDeBain} salle${l.sallesDeBain > 1 ? 's' : ''} de bain',
+      ),
+      if (l.toilettes > 0)
+        (
+          RemixIcons.door_line,
+          '${l.toilettes} toilette${l.toilettes > 1 ? 's' : ''}',
+        ),
       if (l.superficie != null) (RemixIcons.ruler_line, '${l.superficie} m²'),
-      if (l.capacite != null) (RemixIcons.group_line, '${l.capacite} pers. max'),
+      if (l.capacite != null)
+        (RemixIcons.group_line, '${l.capacite} pers. max'),
       if (l.etage != null)
-        (RemixIcons.building_line, l.etage == 0 ? 'Rez-de-chaussée' : 'Étage ${l.etage}'),
+        (
+          RemixIcons.building_line,
+          l.etage == 0 ? 'Rez-de-chaussée' : 'Étage ${l.etage}',
+        ),
       (RemixIcons.armchair_line, l.meuble ? 'Meublé' : 'Non meublé'),
     ];
     return Wrap(
@@ -258,11 +307,7 @@ class _FicheState extends State<_Fiche> {
       padding: const EdgeInsets.only(top: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TitreSection(titre),
-          const SizedBox(height: 10),
-          enfant,
-        ],
+        children: [TitreSection(titre), const SizedBox(height: 10), enfant],
       ),
     );
   }
@@ -316,6 +361,12 @@ class _FicheState extends State<_Fiche> {
               ],
             ),
           ),
+          if (!_estMonLogement && l.telephoneProprietaire.isNotEmpty)
+            IconButton.filledTonal(
+              tooltip: 'Appeler',
+              onPressed: _appeler,
+              icon: const Icon(RemixIcons.phone_line),
+            ),
           if (!_estMonLogement)
             IconButton.filledTonal(
               tooltip: 'Contacter',
@@ -350,9 +401,9 @@ class _FicheState extends State<_Fiche> {
                   Text(
                     l.titre,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Styles.texte,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: Styles.texte,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Row(
@@ -365,9 +416,12 @@ class _FicheState extends State<_Fiche> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          [l.quartier, l.commune, l.ville, l.region]
-                              .where((e) => e.isNotEmpty)
-                              .join(', '),
+                          [
+                            l.quartier,
+                            l.commune,
+                            l.ville,
+                            l.region,
+                          ].where((e) => e.isNotEmpty).join(', '),
                           style: const TextStyle(color: Styles.violet),
                         ),
                       ),
@@ -406,6 +460,57 @@ class _FicheState extends State<_Fiche> {
                       titre: 'Description',
                       enfant: Text(l.description, style: texteGris),
                     ),
+                  if (l.videos.isNotEmpty)
+                    _bloc(
+                      titre: 'Vidéos',
+                      enfant: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          for (final (i, v) in l.videos.indexed)
+                            InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => LecteurVideo(
+                                    url: v.url,
+                                    titre: v.legende.isEmpty
+                                        ? 'Vidéo ${i + 1}'
+                                        : v.legende,
+                                  ),
+                                ),
+                              ),
+                              child: Container(
+                                width: 150,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  color: Styles.violet,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      RemixIcons.play_circle_fill,
+                                      color: Colors.white,
+                                      size: 36,
+                                    ),
+                                    Text(
+                                      v.legende.isEmpty
+                                          ? 'Vidéo ${i + 1}'
+                                          : v.legende,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   if (l.equipements.isNotEmpty)
                     _bloc(
                       titre: 'Équipements',
@@ -439,10 +544,16 @@ class _FicheState extends State<_Fiche> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _ligneMontant('Loyer / ${l.periodiciteLibelle}', l.prix),
+                          _ligneMontant(
+                            'Loyer / ${l.periodiciteLibelle}',
+                            l.prix,
+                          ),
                           _ligneMontant('Caution', l.caution),
                           _ligneMontant('Avance', l.avance),
-                          _ligneMontant('Frais supplémentaires', l.fraisSupplementaires),
+                          _ligneMontant(
+                            'Frais supplémentaires',
+                            l.fraisSupplementaires,
+                          ),
                           _ligneMontant('Charges', l.charges),
                           if (l.conditionsPaiement.isNotEmpty) ...[
                             const Divider(height: 20),
@@ -484,10 +595,21 @@ class _FicheState extends State<_Fiche> {
                             l.adresseVisible && l.adresse.isNotEmpty
                                 ? l.adresse
                                 : 'Position approximative. L’adresse exacte vous '
-                                    'sera communiquée après acceptation de votre réservation.',
+                                      'sera communiquée après acceptation de votre réservation.',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: _itineraire,
+                            style: styleBoutonSecondaire(),
+                            icon: const Icon(RemixIcons.route_line),
+                            label: Text(
+                              l.adresseVisible
+                                  ? 'Itinéraire jusqu’au logement'
+                                  : 'Itinéraire vers le quartier',
                             ),
                           ),
                         ],
@@ -495,9 +617,7 @@ class _FicheState extends State<_Fiche> {
                     ),
                   _bloc(titre: 'Propriétaire', enfant: _proprietaire()),
                   _bloc(
-                    titre: l.nombreAvis > 0
-                        ? 'Avis (${l.nombreAvis})'
-                        : 'Avis',
+                    titre: l.nombreAvis > 0 ? 'Avis (${l.nombreAvis})' : 'Avis',
                     enfant: ListeAvis(logementId: l.id),
                   ),
                   const SizedBox(height: 24),

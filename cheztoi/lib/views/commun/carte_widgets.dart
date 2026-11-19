@@ -6,9 +6,9 @@ import 'package:remixicon/remixicon.dart';
 
 /// Tuiles OpenStreetMap : pas de clé d'API nécessaire.
 TileLayer coucheOsm() => TileLayer(
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      userAgentPackageName: 'tg.cheztoi.app',
-    );
+  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  userAgentPackageName: 'tg.cheztoi.app',
+);
 
 /// Centre par défaut : Lomé.
 const LatLng centreParDefaut = LatLng(6.1375, 1.2123);
@@ -165,7 +165,7 @@ class _SelecteurPositionState extends State<SelecteurPosition> {
                   _point == null
                       ? 'Touchez la carte pour placer votre logement.'
                       : 'Position : ${_point!.latitude.toStringAsFixed(5)}, '
-                          '${_point!.longitude.toStringAsFixed(5)}',
+                            '${_point!.longitude.toStringAsFixed(5)}',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -177,8 +177,9 @@ class _SelecteurPositionState extends State<SelecteurPosition> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: FilledButton(
-            onPressed:
-                _point == null ? null : () => Navigator.pop(context, _point),
+            onPressed: _point == null
+                ? null
+                : () => Navigator.pop(context, _point),
             style: FilledButton.styleFrom(
               backgroundColor: Styles.violet,
               padding: const EdgeInsets.symmetric(vertical: 16),

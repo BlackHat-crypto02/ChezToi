@@ -113,7 +113,9 @@ Connexion mobile :
 }
 ```
 
-`username` peut remplacer `email`. La réponse contient `access`, `refresh`
+`username` peut remplacer `email`, et `email` accepte aussi un numéro de
+téléphone (comparaison sur les 8 derniers chiffres ; un numéro ne peut
+appartenir qu'à un compte). La réponse contient `access`, `refresh`
 et `user` (prénom, nom, rôle, téléphone, ville).
 
 ## Endpoints métier
@@ -128,6 +130,8 @@ Toutes les routes sont sous `/api/v1/`. « public » = sans jeton ; sinon
 |---|---|---|
 | GET / PATCH / DELETE | `auth/me/` | Profil ; PATCH accepte `first_name`, `last_name`, `phone`, `city`, `bio`, `photo` (multipart) et `role` (`locataire` ↔ `proprietaire`) ; DELETE `{password}` anonymise le compte |
 | POST | `auth/change-password/` | `{ancien, nouveau}` |
+| GET / PATCH | `auth/preferences/` | catégories de notifications `reservations`, `messages`, `alertes`, `annonces`, `avis` (booléens, toutes actives par défaut) |
+| GET / POST | `auth/justificatifs/` | vérification du compte : multipart `type` (`piece_identite`, `titre_propriete`, `justificatif_domicile`, `autre`) + `fichier` (image ou PDF, 10 Mo) ; GET renvoie `{verifie, justificatifs}` (jamais l'URL du fichier) |
 | POST | `auth/password-reset/` | public, `{email}` → code à 6 chiffres par e-mail (15 min) |
 | POST | `auth/password-reset/confirm/` | public, `{email, code, password}` |
 
@@ -135,7 +139,7 @@ Toutes les routes sont sous `/api/v1/`. « public » = sans jeton ; sinon
 
 | Méthode | Route | Description |
 |---|---|---|
-| GET | `logements/` | public, recherche : `q`, `ville`, `commune`, `quartier`, `type` (liste), `periodicite`, `prix_min/max`, `chambres_min`, `salles_de_bain_min`, `superficie_min/max`, `meuble`, `equipements` (ids), `verifie`, `visite`, `disponible_du/au`, zone `lat_min/lat_max/lng_min/lng_max`, autour `lat/lng/rayon_km` ; `tri` = `recent`, `prix_asc`, `prix_desc`, `populaire`, `note`, `proximite` |
+| GET | `logements/` | public, recherche : `ids` (liste), `q`, `ville`, `commune`, `quartier`, `type` (liste), `periodicite`, `prix_min/max`, `chambres_min`, `salles_de_bain_min`, `superficie_min/max`, `meuble`, `equipements` (ids), `verifie`, `visite`, `disponible_du/au`, zone `lat_min/lat_max/lng_min/lng_max`, autour `lat/lng/rayon_km` ; `tri` = `recent`, `prix_asc`, `prix_desc`, `populaire`, `note`, `proximite` |
 | GET | `logements/carte/` | public, mêmes filtres, 300 marqueurs max |
 | GET | `logements/accueil/` | public, sections de l'accueil (récents, populaires, recommandés, vérifiés, 360°, villes, types) |
 | GET | `logements/suggestions/?q=` | public, villes / communes / quartiers |
@@ -155,6 +159,7 @@ Toutes les routes sont sous `/api/v1/`. « public » = sans jeton ; sinon
 | GET / PATCH / DELETE | `mes-logements/<id>/` | modification interdite si suspendue ; suppression refusée s'il existe des réservations en cours |
 | POST | `mes-logements/<id>/<action>/` | `soumettre` (≥ 1 photo), `brouillon`, `archiver`, `louee`, `republier` |
 | POST | `mes-logements/<id>/photos/` | multipart `image`, `legende` ; PATCH / DELETE `photos/<photo_id>/` (`legende`, `ordre`, `principale`) |
+| POST | `mes-logements/<id>/videos/` | multipart `fichier` (MP4, MOV, WEBM, 3GP ; 50 Mo, 3 par annonce) ; DELETE `videos/<video_id>/` |
 | POST | `mes-logements/<id>/panoramas/` | multipart `image`, `piece` (visite 360°) ; DELETE `panoramas/<panorama_id>/` |
 | GET | `mes-logements/statistiques/` | tableau de bord |
 
@@ -184,7 +189,7 @@ une demande non traitée avant la date d'arrivée est annulée.
 | POST / DELETE | `conversations/<id>/bloquer/` | bloquer / débloquer |
 | GET | `conversations/non-lus/`, `notifications/non-lues/` | compteurs |
 | GET | `notifications/` ; POST `notifications/lire/`, `notifications/<id>/lire/` | notifications |
-| GET / POST | `signalements/` | `{motif, description, logement \| utilisateur \| reservation \| avis \| conversation}` ; un signalement de réservation ouvre un litige |
+| GET / POST | `signalements/` | `{motif, description, logement \| utilisateur \| reservation \| avis \| conversation}` ; un signalement de réservation ouvre un litige ; sans cible, `motif=autre` + `description` = demande d'assistance |
 
 ### Administration (rôle `admin`, préfixe `admin/`)
 
@@ -193,7 +198,7 @@ une demande non traitée avant la date d'arrivée est annulée.
 `retirer_verification` et `motif`), `reservations/` (+ PATCH `<id>/` `{statut}`),
 `signalements/` (+ PATCH `<id>/` `{statut, decision}`), `avis/` (+ PATCH `<id>/`
 `{masque}`), `equipements/` (CRUD), PATCH `utilisateurs/<id>/`
-`{is_active, verified}`. La validation d'une annonce prévient les utilisateurs
+`{is_active, verified}`, `justificatifs/` (+ PATCH `<id>/` `{statut: accepte|refuse, motif}` qui vérifie le compte, GET `<id>/fichier/` pour télécharger le document). La validation d'une annonce prévient les utilisateurs
 dont une alerte correspond.
 
 ## Application Flutter

@@ -15,7 +15,8 @@ class Demande extends StatefulWidget {
 }
 
 class _DemandeState extends State<Demande> {
-  late Future<List<Reservation>> _futur = ChezToiApi.instance.reservationsRecues();
+  late Future<List<Reservation>> _futur = ChezToiApi.instance
+      .reservationsRecues();
 
   static const _onglets = {
     'En attente': ['en_attente'],
@@ -44,7 +45,10 @@ class _DemandeState extends State<Demande> {
         motif: motif,
       );
       if (!mounted) return;
-      afficherMessage(context, accepter ? 'Réservation acceptée.' : 'Demande refusée.');
+      afficherMessage(
+        context,
+        accepter ? 'Réservation acceptée.' : 'Demande refusée.',
+      );
       _recharger();
     } catch (e) {
       if (mounted) afficherMessage(context, messageErreur(e), erreur: true);
@@ -100,7 +104,9 @@ class _DemandeState extends State<Demande> {
                       Expanded(
                         child: FilledButton(
                           onPressed: () => _repondre(r, true),
-                          style: FilledButton.styleFrom(backgroundColor: Styles.violet),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Styles.violet,
+                          ),
                           child: const Text('Accepter'),
                         ),
                       ),
@@ -138,7 +144,10 @@ class _DemandeState extends State<Demande> {
               return const Chargement();
             }
             if (snapshot.hasError) {
-              return EtatErreur(erreur: snapshot.error!, onReessayer: _recharger);
+              return EtatErreur(
+                erreur: snapshot.error!,
+                onReessayer: _recharger,
+              );
             }
             final toutes = snapshot.data!;
             return TabBarView(
