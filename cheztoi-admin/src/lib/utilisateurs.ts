@@ -65,17 +65,26 @@ export async function appelApi<T>(chemin: string, options: RequestInit = {}): Pr
   if (jeton) entetes.set("Authorization", `Bearer ${jeton}`);
   if (options.body) entetes.set("Content-Type", "application/json");
 
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  if (!base) {
+    throw new ErreurApi(
+      "NEXT_PUBLIC_API_URL manque : créez cheztoi-admin/.env.local (voir .env.example) puis relancez npm run dev.",
+      0,
+    );
+  }
   const reponse = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}${chemin}`,
+    `${base}${chemin}`,
     { ...options, headers: entetes },
   );
   const donnees: unknown = await reponse.json().catch(() => null);
 
   if (!reponse.ok) {
-    throw new ErreurApi(
-      messageErreur(donnees) || "Une erreur est survenue. Réessayez.",
-      reponse.status,
-    );
+    const defaut =
+      reponse.status >= 500
+        ? `Erreur du serveur (${reponse.status}). Si vous venez de récupérer le code, ` +
+          "appliquez les migrations : python manage.py migrate."
+        : `Une erreur est survenue (${reponse.status}). Réessayez.`;
+    throw new ErreurApi(messageErreur(donnees) || defaut, reponse.status);
   }
   return donnees as T;
 }
