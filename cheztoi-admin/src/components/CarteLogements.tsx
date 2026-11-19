@@ -98,17 +98,17 @@ export default function CarteLogements({
     }
     element?.addEventListener("click", surClic, true);
 
-    void import("leaflet").then((module) => {
+    void import("leaflet").then((lf) => {
       if (annule || !element || carte.current) return;
-      L.current = module;
-      const instance = module.map(element, { zoomControl: true }).setView([6.1375, 1.2123], 12);
-      module
+      L.current = lf;
+      const instance = lf.map(element, { zoomControl: true }).setView([6.1375, 1.2123], 12);
+      lf
         .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
           attribution: "© contributeurs OpenStreetMap",
         })
         .addTo(instance);
-      couche.current = module.layerGroup().addTo(instance);
+      couche.current = lf.layerGroup().addTo(instance);
       carte.current = instance;
       instance.on("zoomend", () => dessiner());
       // La largeur change quand le menu de gauche s'ouvre : Leaflet doit le savoir.
@@ -129,10 +129,10 @@ export default function CarteLogements({
   }, []);
 
   function dessiner() {
-    const module = L.current;
+    const lf = L.current;
     const instance = carte.current;
     const groupe = couche.current;
-    if (!module || !instance || !groupe) return;
+    if (!lf || !instance || !groupe) return;
     groupe.clearLayers();
 
     for (const membres of regrouper(instance, points.current)) {
@@ -143,7 +143,7 @@ export default function CarteLogements({
         // Taille exacte de l'étiquette : la zone cliquable de Leaflet colle au visuel,
         // et la pointe (en bas, au centre) tombe sur la position du logement.
         const largeur = Math.round(texte.length * 7.5 + 24);
-        const icone = module.divIcon({
+        const icone = lf.divIcon({
           className: "",
           iconSize: [largeur, 32],
           iconAnchor: [largeur / 2, 32],
@@ -155,20 +155,20 @@ export default function CarteLogements({
             <span style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid ${couleur};margin-top:-1px"></span>
           </div>`,
         });
-        module
+        lf
           .marker([lat, lng], { icon: icone, title: l.titre, riseOnHover: true })
           .bindPopup(contenuPopup(l), { maxWidth: 240 })
           .addTo(groupe);
       } else {
         const taille = membres.length < 10 ? 38 : 46;
-        const icone = module.divIcon({
+        const icone = lf.divIcon({
           className: "",
           iconSize: [taille, taille],
           iconAnchor: [taille / 2, taille / 2],
           html: `<div style="box-sizing:border-box;width:${taille}px;height:${taille}px;border-radius:9999px;background:#0b5f58;color:#fff;display:flex;align-items:center;justify-content:center;font:700 14px sans-serif;border:3px solid #fff;box-shadow:0 0 0 4px rgba(15,118,110,.25);cursor:pointer">${membres.length}</div>`,
         });
-        const limites = module.latLngBounds(membres.map((m) => [m.lat, m.lng] as [number, number]));
-        module
+        const limites = lf.latLngBounds(membres.map((m) => [m.lat, m.lng] as [number, number]));
+        lf
           .marker(limites.getCenter(), {
             icon: icone,
             title: `${membres.length} logements`,
@@ -177,7 +177,7 @@ export default function CarteLogements({
             // Mêmes coordonnées au zoom maximal : on liste plutôt que de zoomer.
             const identiques = limites.getNorthEast().equals(limites.getSouthWest());
             if (identiques || instance.getZoom() >= instance.getMaxZoom()) {
-              module
+              lf
                 .popup({ maxWidth: 260 })
                 .setLatLng(limites.getCenter())
                 .setContent(
