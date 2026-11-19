@@ -59,7 +59,7 @@ function messageErreur(donnees: unknown): string {
   return "";
 }
 
-async function appelApi<T>(chemin: string, options: RequestInit = {}): Promise<T> {
+export async function appelApi<T>(chemin: string, options: RequestInit = {}): Promise<T> {
   const jeton = lireToken();
   const entetes = new Headers(options.headers);
   if (jeton) entetes.set("Authorization", `Bearer ${jeton}`);

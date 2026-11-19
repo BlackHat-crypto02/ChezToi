@@ -12,6 +12,7 @@ import {
 } from "@remixicon/react";
 import FormulaireAdministrateur from "@/components/FormulaireAdministrateur";
 import { effacerSession } from "@/lib/auth";
+import { modifierUtilisateur } from "@/lib/admin";
 import {
   ErreurApi,
   listerUtilisateurs,
@@ -81,6 +82,26 @@ export default function UtilisateursPage() {
     setErreur("");
     setMessage("");
     void charger();
+  }
+
+  async function modifier(
+    utilisateur: Utilisateur,
+    champs: { is_active?: boolean; verified?: boolean },
+    texte: string,
+  ) {
+    setMessage("");
+    setErreur("");
+    try {
+      await modifierUtilisateur(utilisateur.id, champs);
+      setUtilisateurs((liste) =>
+        liste.map((u) => (u.id === utilisateur.id ? { ...u, ...champs } : u)),
+      );
+      setMessage(texte);
+    } catch (erreur) {
+      setErreur(
+        erreur instanceof ErreurApi ? erreur.message : "Modification impossible.",
+      );
+    }
   }
 
   async function renvoyer(id: number) {
@@ -231,6 +252,23 @@ export default function UtilisateursPage() {
                               : "Non vérifié"}
                           </span>
                         )}
+                        {utilisateur.role !== "admin" && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void modifier(
+                                utilisateur,
+                                { verified: !utilisateur.verified },
+                                utilisateur.verified
+                                  ? `${utilisateur.nom_complet} n'est plus vérifié.`
+                                  : `${utilisateur.nom_complet} est maintenant vérifié.`,
+                              )
+                            }
+                            className="text-xs font-semibold text-pri hover:text-pri-d"
+                          >
+                            {utilisateur.verified ? "Retirer la vérification" : "Vérifier l'identité"}
+                          </button>
+                        )}
                         {utilisateur.invitation_en_attente && (
                           <button
                             type="button"
@@ -261,6 +299,21 @@ export default function UtilisateursPage() {
                         />
                         {utilisateur.is_active ? "Actif" : "Inactif"}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void modifier(
+                            utilisateur,
+                            { is_active: !utilisateur.is_active },
+                            utilisateur.is_active
+                              ? `Compte de ${utilisateur.nom_complet} suspendu.`
+                              : `Compte de ${utilisateur.nom_complet} réactivé.`,
+                          )
+                        }
+                        className="mt-1.5 block text-xs font-semibold text-pri hover:text-pri-d"
+                      >
+                        {utilisateur.is_active ? "Suspendre" : "Réactiver"}
+                      </button>
                     </td>
                     <td className="px-5 py-4 text-gray-600">
                       {formaterDate(utilisateur.date_joined)}

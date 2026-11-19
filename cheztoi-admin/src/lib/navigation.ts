@@ -2,20 +2,23 @@ import {
   RiAdvertisementLine,
   RiBox3Line,
   RiCalendarCheckLine,
+  RiFlagLine,
   RiHome5Line,
   RiMapPinLine,
   RiShieldLine,
+  RiStarLine,
   RiTeamLine,
+  RiToolsLine,
 } from "@remixicon/react";
 
-/// Les sept sections de l'administration, dans l'ordre du menu de gauche.
+/// Les sections de l'administration, dans l'ordre du menu de gauche.
 /// Le titre et le sous-titre sont aussi affichés dans la barre du haut.
 export const entrees = [
   {
     libelle: "Tableau de bord",
     chemin: "/",
     icone: RiHome5Line,
-    description: "Bienvenue sur votre tableau de bord.",
+    description: "Vue d’ensemble de l’activité de la plateforme.",
   },
   {
     libelle: "Utilisateurs",
@@ -24,28 +27,46 @@ export const entrees = [
     description: "Consultez les comptes locataires, propriétaires et administrateurs.",
   },
   {
-    libelle: "Annonce",
+    libelle: "Annonces",
     chemin: "/annonces",
     icone: RiAdvertisementLine,
-    description: "Les annonces de logements seront listées ici.",
+    description: "Validez, refusez ou suspendez les annonces des propriétaires.",
   },
   {
     libelle: "Réservations",
     chemin: "/reservations",
     icone: RiCalendarCheckLine,
-    description: "Les réservations et visites à confirmer apparaîtront ici.",
+    description: "Suivez les réservations et arbitrez les litiges.",
   },
   {
     libelle: "Visite virtuelle",
     chemin: "/visite-virtuelle",
     icone: RiBox3Line,
-    description: "Les visites 360° et 3D des logements seront gérées ici.",
+    description: "Consultez les visites 360° envoyées par les propriétaires.",
   },
   {
     libelle: "Carte",
     chemin: "/carte",
     icone: RiMapPinLine,
-    description: "La carte des logements disponibles sera affichée ici.",
+    description: "Tous les logements géolocalisés, par statut.",
+  },
+  {
+    libelle: "Signalements",
+    chemin: "/signalements",
+    icone: RiFlagLine,
+    description: "Traitez les signalements et litiges des utilisateurs.",
+  },
+  {
+    libelle: "Avis",
+    chemin: "/avis",
+    icone: RiStarLine,
+    description: "Modérez les avis laissés après les séjours.",
+  },
+  {
+    libelle: "Équipements",
+    chemin: "/equipements",
+    icone: RiToolsLine,
+    description: "Gérez la liste des équipements proposés aux propriétaires.",
   },
   {
     libelle: "Administrateurs",
