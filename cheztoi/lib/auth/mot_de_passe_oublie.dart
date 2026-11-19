@@ -82,7 +82,7 @@ class _MotDePasseOublieState extends State<MotDePasseOublie> {
                     const Icon(
                       RemixIcons.lock_unlock_line,
                       size: 56,
-                      color: Styles.violet,
+                      color: Styles.primaire,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -90,7 +90,7 @@ class _MotDePasseOublieState extends State<MotDePasseOublie> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
-                            color: Styles.violet,
+                            color: Styles.primaire,
                             fontWeight: FontWeight.bold,
                           ),
                     ),

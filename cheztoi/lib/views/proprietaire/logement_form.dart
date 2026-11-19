@@ -188,7 +188,7 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
         children: [
           Row(
             children: [
-              Icon(icone, color: Styles.violet),
+              Icon(icone, color: Styles.primaire),
               const SizedBox(width: 8),
               Text(
                 titre,
@@ -293,14 +293,14 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
                     ChoiceChip(
                       label: Text(t.value),
                       selected: _type == t.key,
-                      selectedColor: Styles.violet.withValues(alpha: 0.15),
+                      selectedColor: Styles.primaire.withValues(alpha: 0.15),
                       onSelected: (_) => setState(() => _type = t.key),
                     ),
                 ],
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                activeThumbColor: Styles.violet,
+                activeThumbColor: Styles.primaire,
                 title: const Text('Logement meublé'),
                 value: _meuble,
                 onChanged: (v) => setState(() => _meuble = v),
@@ -362,8 +362,8 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
                       FilterChip(
                         label: Text(e.nom),
                         selected: _equipements.contains(e.id),
-                        selectedColor: Styles.violet.withValues(alpha: 0.15),
-                        checkmarkColor: Styles.violet,
+                        selectedColor: Styles.primaire.withValues(alpha: 0.15),
+                        checkmarkColor: Styles.primaire,
                         onSelected: (oui) => setState(() {
                           oui
                               ? _equipements.add(e.id)
@@ -446,7 +446,7 @@ class _LogementFormulaireState extends State<LogementFormulaire> {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeThumbColor: Styles.violet,
+                  activeThumbColor: Styles.primaire,
                   title: const Text('Réservation instantanée'),
                   subtitle: const Text(
                     'Les réservations sont confirmées sans votre validation.',

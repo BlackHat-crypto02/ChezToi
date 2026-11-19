@@ -1,8 +1,10 @@
 import 'package:cheztoi/models/modeles.dart';
 import 'package:cheztoi/services/auth_service.dart';
+import 'package:cheztoi/services/acces.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
 import 'package:cheztoi/views/commun/logement_detail.dart';
 import 'package:cheztoi/widget/styles.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:remixicon/remixicon.dart';
 
@@ -94,7 +96,7 @@ Future<bool> confirmer(
         ),
         FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: danger ? Colors.red.shade700 : Styles.violet,
+            backgroundColor: danger ? Colors.red.shade700 : Styles.primaire,
           ),
           onPressed: () => Navigator.pop(context, true),
           child: Text(action),
@@ -133,7 +135,7 @@ Future<String?> demanderTexte(
           child: const Text('Annuler'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Styles.violet),
+          style: FilledButton.styleFrom(backgroundColor: Styles.primaire),
           onPressed: () {
             final texte = controleur.text.trim();
             if (obligatoire && texte.isEmpty) return;
@@ -157,7 +159,7 @@ class Chargement extends StatelessWidget {
   Widget build(BuildContext context) => const Center(
     child: Padding(
       padding: EdgeInsets.all(32),
-      child: CircularProgressIndicator(color: Styles.violet),
+      child: CircularProgressIndicator(color: Styles.primaire),
     ),
   );
 }
@@ -189,10 +191,10 @@ class EtatVide extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Styles.violet.withValues(alpha: 0.07),
+                color: Styles.primaire.withValues(alpha: 0.07),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icone, size: 34, color: Styles.violet),
+              child: Icon(icone, size: 34, color: Styles.primaire),
             ),
             const SizedBox(height: 16),
             Text(
@@ -217,8 +219,8 @@ class EtatVide extends StatelessWidget {
               OutlinedButton(
                 onPressed: onAction,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Styles.violet,
-                  side: const BorderSide(color: Styles.violet),
+                  foregroundColor: Styles.primaire,
+                  side: const BorderSide(color: Styles.primaire),
                 ),
                 child: Text(action!),
               ),
@@ -343,12 +345,12 @@ class Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: rayon,
-      backgroundColor: Styles.violet.withValues(alpha: 0.12),
+      backgroundColor: Styles.primaire.withValues(alpha: 0.12),
       foregroundImage: url == null || url!.isEmpty ? null : NetworkImage(url!),
       child: Text(
         initiales.isEmpty ? '?' : initiales,
         style: TextStyle(
-          color: Styles.violet,
+          color: Styles.primaire,
           fontWeight: FontWeight.bold,
           fontSize: rayon * 0.7,
         ),
@@ -363,7 +365,7 @@ class Pastille extends StatelessWidget {
   const Pastille({
     super.key,
     required this.texte,
-    this.couleur = Styles.violet,
+    this.couleur = Styles.primaire,
     this.icone,
   });
 
@@ -415,7 +417,7 @@ Color couleurStatut(String statut) {
     case 'en_litige':
       return Colors.red.shade700;
     case 'louee':
-      return Styles.bleu;
+      return Styles.primaire;
     default:
       return Colors.grey.shade700;
   }
@@ -489,7 +491,7 @@ class TitreSection extends StatelessWidget {
             child: Text(
               action!,
               style: const TextStyle(
-                color: Styles.bleu,
+                color: Styles.primaire,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -509,6 +511,7 @@ Future<void> ouvrirLogement(BuildContext context, int id) {
 }
 
 /// Bouton cœur : bascule le favori côté serveur avec mise à jour optimiste.
+/// Pour un invité, demande d'abord la connexion.
 class BoutonFavori extends StatefulWidget {
   const BoutonFavori({
     super.key,
@@ -525,8 +528,13 @@ class BoutonFavori extends StatefulWidget {
   State<BoutonFavori> createState() => _BoutonFavoriState();
 }
 
-class _BoutonFavoriState extends State<BoutonFavori> {
+class _BoutonFavoriState extends State<BoutonFavori>
+    with SingleTickerProviderStateMixin {
   late bool _favori = widget.logement.estFavori;
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 320),
+  );
 
   @override
   void didUpdateWidget(covariant BoutonFavori ancien) {
@@ -536,9 +544,24 @@ class _BoutonFavoriState extends State<BoutonFavori> {
     }
   }
 
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
   Future<void> _basculer() async {
+    if (!await exigerConnexion(
+          context,
+          raison: 'Connectez-vous pour enregistrer ce logement dans vos favoris.',
+        ) ||
+        !mounted) {
+      return;
+    }
     final nouveau = !_favori;
+    HapticFeedback.lightImpact();
     setState(() => _favori = nouveau);
+    if (nouveau) _pulse.forward(from: 0);
     try {
       await ChezToiApi.instance.basculerFavori(
         widget.logement.id,
@@ -554,55 +577,70 @@ class _BoutonFavoriState extends State<BoutonFavori> {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      key: ValueKey('favori_${widget.logement.id}'),
-      onTap: _basculer,
-      customBorder: const CircleBorder(),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.92),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          _favori ? RemixIcons.heart_3_fill : RemixIcons.heart_3_line,
-          color: _favori ? Colors.red : Styles.violet,
-          size: widget.taille,
+    return Semantics(
+      button: true,
+      label: _favori ? 'Retirer des favoris' : 'Ajouter aux favoris',
+      child: InkWell(
+        key: ValueKey('favori_${widget.logement.id}'),
+        onTap: _basculer,
+        customBorder: const CircleBorder(),
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.95),
+            shape: BoxShape.circle,
+            boxShadow: Styles.ombre(),
+          ),
+          child: ScaleTransition(
+            scale: TweenSequence([
+              TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.35), weight: 1),
+              TweenSequenceItem(tween: Tween(begin: 1.35, end: 1.0), weight: 1),
+            ]).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeOut)),
+            child: Icon(
+              _favori ? RemixIcons.heart_3_fill : RemixIcons.heart_3_line,
+              color: _favori ? const Color(0xFFE11D48) : Styles.texte,
+              size: widget.taille,
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _Prix extends StatelessWidget {
-  const _Prix({required this.logement});
+/// Prix en pastille blanche posée sur la photo.
+class _PrixSurImage extends StatelessWidget {
+  const _PrixSurImage({required this.logement});
 
   final Logement logement;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Flexible(
-          child: Text(
-            formatPrix(logement.prix, logement.devise),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Styles.texte,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: Styles.ombre(),
+      ),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: formatPrix(logement.prix, logement.devise),
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Styles.texte,
+                fontSize: 13.5,
+              ),
             ),
-          ),
+            TextSpan(
+              text: ' /${logement.periodiciteLibelle}',
+              style: const TextStyle(color: Styles.texteDoux, fontSize: 11.5),
+            ),
+          ],
         ),
-        const SizedBox(width: 4),
-        Text(
-          '/ ${logement.periodiciteLibelle}',
-          style: const TextStyle(color: Colors.grey, fontSize: 12),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -616,25 +654,21 @@ class _Localisation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(RemixIcons.map_pin_3_line, size: 14, color: Styles.violet),
+        const Icon(RemixIcons.map_pin_2_fill, size: 14, color: Styles.primaire),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
             logement.localisation,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Styles.violet,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 12.5, color: Styles.texteDoux),
           ),
         ),
         if (logement.distanceKm != null) ...[
           const SizedBox(width: 6),
           Text(
             '· ${logement.distanceKm} km',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: const TextStyle(fontSize: 12, color: Styles.primaire, fontWeight: FontWeight.w600),
           ),
         ],
       ],
@@ -642,39 +676,95 @@ class _Localisation extends StatelessWidget {
   }
 }
 
-class _Badges extends StatelessWidget {
-  const _Badges({required this.logement});
+/// Chambres, surface et note en petites icônes.
+class _Caracteristiques extends StatelessWidget {
+  const _Caracteristiques({required this.logement});
 
   final Logement logement;
 
   @override
   Widget build(BuildContext context) {
+    Widget element(IconData icone, String texte) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icone, size: 14, color: Styles.texteDoux),
+            const SizedBox(width: 4),
+            Text(texte, style: const TextStyle(fontSize: 12, color: Styles.texteDoux)),
+          ],
+        );
     return Wrap(
-      spacing: 6,
+      spacing: 12,
       runSpacing: 4,
       children: [
-        if (logement.verifie)
-          const Pastille(
-            texte: 'Vérifié',
-            icone: RemixIcons.verified_badge_fill,
-            couleur: Colors.green,
-          ),
-        if (logement.aVisiteVirtuelle)
-          const Pastille(texte: '360°', icone: RemixIcons.camera_3_line),
+        element(RemixIcons.hotel_bed_line, '${logement.chambres} ch.'),
+        if (logement.superficie != null)
+          element(RemixIcons.ruler_2_line, '${logement.superficie} m²'),
         if (logement.noteMoyenne != null)
-          Pastille(
-            texte: '${logement.noteMoyenne} (${logement.nombreAvis})',
-            icone: RemixIcons.star_fill,
-            couleur: Colors.amber.shade800,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(RemixIcons.star_fill, size: 14, color: Styles.accent),
+              const SizedBox(width: 3),
+              Text(
+                '${logement.noteMoyenne} (${logement.nombreAvis})',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ],
           ),
       ],
     );
   }
 }
 
-/// Carte verticale, pour les listes horizontales de l'accueil.
+class _BadgesImage extends StatelessWidget {
+  const _BadgesImage({required this.logement});
+
+  final Logement logement;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget badge(IconData icone, String texte, Color couleur) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: couleur,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icone, size: 12, color: Colors.white),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  texte,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        if (logement.verifie)
+          badge(RemixIcons.verified_badge_fill, 'Vérifié', Styles.primaire),
+        if (logement.aVisiteVirtuelle)
+          badge(RemixIcons.camera_3_fill, '360°', Styles.primaireNuit.withValues(alpha: 0.85)),
+      ],
+    );
+  }
+}
+
+/// Carte verticale, pour les listes horizontales (accueil, similaires).
 class LogementCarte extends StatelessWidget {
-  const LogementCarte({super.key, required this.logement, this.largeur = 240});
+  const LogementCarte({super.key, required this.logement, this.largeur = 250});
 
   final Logement logement;
   final double largeur;
@@ -685,59 +775,66 @@ class LogementCarte extends StatelessWidget {
       width: largeur,
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(Styles.rayonGrand),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => ouvrirLogement(context, logement.id),
-          child: Container(
+          child: Ink(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(Styles.rayonGrand),
+              border: Border.all(color: Styles.bordure),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  children: [
-                    ImageLogement(url: logement.photo, hauteur: 140),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: BoutonFavori(logement: logement),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      children: [
+                        ImageLogement(url: logement.photo, hauteur: 160),
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          right: 48,
+                          child: _BadgesImage(logement: logement),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: BoutonFavori(logement: logement),
+                        ),
+                        Positioned(
+                          left: 8,
+                          bottom: 8,
+                          child: _PrixSurImage(logement: logement),
+                        ),
+                      ],
                     ),
-                    Positioned(
-                      left: 8,
-                      bottom: 8,
-                      child: Pastille(
-                        texte: logement.typeLibelle,
-                        couleur: Colors.white,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Prix(logement: logement),
-                      const SizedBox(height: 6),
-                      _Localisation(logement: logement),
-                      const SizedBox(height: 6),
                       Text(
                         logement.titre,
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          height: 1.3,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      _Badges(logement: logement),
+                      const SizedBox(height: 4),
+                      _Localisation(logement: logement),
+                      const SizedBox(height: 8),
+                      _Caracteristiques(logement: logement),
                     ],
                   ),
                 ),
@@ -771,74 +868,104 @@ class LogementTuile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(Styles.rayonGrand),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap ?? () => ouvrirLogement(context, logement.id),
-        child: Container(
+        child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(Styles.rayonGrand),
+            border: Border.all(color: Styles.bordure),
           ),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  width: 120,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ImageLogement(url: logement.photo),
-                      if (afficherFavori)
-                        Positioned(
-                          top: 6,
-                          left: 6,
-                          child: BoutonFavori(
-                            logement: logement,
-                            taille: 16,
-                            onChange: onFavori,
-                          ),
-                        ),
-                    ],
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: SizedBox(
+                      width: 116,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ImageLogement(url: logement.photo),
+                          if (afficherFavori)
+                            Positioned(
+                              top: 6,
+                              left: 6,
+                              child: BoutonFavori(
+                                logement: logement,
+                                taille: 15,
+                                onChange: onFavori,
+                              ),
+                            ),
+                          if (logement.verifie || logement.aVisiteVirtuelle)
+                            Positioned(
+                              left: 6,
+                              bottom: 6,
+                              right: 6,
+                              child: _BadgesImage(logement: logement),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.fromLTRB(4, 12, 12, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
+                          logement.typeLibelle.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            letterSpacing: 0.8,
+                            fontWeight: FontWeight.w800,
+                            color: Styles.primaire,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
                           logement.titre,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Styles.texte,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14.5,
+                            height: 1.25,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         _Localisation(logement: logement),
-                        const SizedBox(height: 4),
-                        Text(
-                          [
-                            logement.typeLibelle,
-                            '${logement.chambres} ch.',
-                            if (logement.superficie != null)
-                              '${logement.superficie} m²',
-                            if (logement.meuble) 'meublé',
-                          ].join(' · '),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
+                        const SizedBox(height: 6),
+                        _Caracteristiques(logement: logement),
+                        const SizedBox(height: 8),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: formatPrix(logement.prix, logement.devise),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  color: Styles.texte,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' / ${logement.periodiciteLibelle}',
+                                style: const TextStyle(
+                                  color: Styles.texteDoux,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        _Prix(logement: logement),
-                        const SizedBox(height: 6),
-                        _Badges(logement: logement),
                       ],
                     ),
                   ),
@@ -908,7 +1035,7 @@ class SectionLogements extends StatelessWidget {
   }
 }
 
-/// Champ de formulaire au style ChezToi.
+/// Champ de formulaire au style ChezToi (le thème fournit bordures et couleurs).
 InputDecoration decorationChamp(
   String label, {
   IconData? icone,
@@ -920,24 +1047,11 @@ InputDecoration decorationChamp(
     helperText: aide,
     suffixText: suffixe,
     prefixIcon: icone == null ? null : Icon(icone),
-    filled: true,
-    fillColor: Colors.white,
-    border: Styles.border(Colors.grey.shade300),
-    enabledBorder: Styles.border(Colors.grey.shade300),
-    focusedBorder: Styles.border(Styles.violet, width: 2),
   );
 }
 
-ButtonStyle styleBoutonPrincipal() => FilledButton.styleFrom(
-  backgroundColor: Styles.violet,
-  foregroundColor: Colors.white,
-  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-);
+ButtonStyle styleBoutonPrincipal() => FilledButton.styleFrom();
 
 ButtonStyle styleBoutonSecondaire() => OutlinedButton.styleFrom(
-  foregroundColor: Styles.violet,
-  side: const BorderSide(color: Styles.violet),
-  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-);
+      side: const BorderSide(color: Styles.primaire, width: 1.4),
+    );

@@ -26,6 +26,18 @@ void main() {
     installerFausseApi();
   });
 
+  /// Simule un utilisateur connecté (sinon l'app est en mode invité).
+  void connecter() {
+    Session.utilisateur.value = UtilisateurAuth.fromJson(const {
+      'id': 99,
+      'username': 'uriel',
+      'email': 'uriel@exemple.tg',
+      'first_name': 'Uriel',
+      'role': 'locataire',
+    });
+    addTearDown(() => Session.utilisateur.value = null);
+  }
+
   void ecranGrand(WidgetTester tester) {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -71,45 +83,48 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
   });
 
-  testWidgets('L’accueil affiche les icônes et le logo ChezToi',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Accueil()));
-    await tester.pumpAndSettle();
-
-    expect(find.byIcon(RemixIcons.user_3_line), findsOneWidget);
-    expect(find.byIcon(RemixIcons.notification_3_line), findsOneWidget);
-    // Badge des 2 notifications non lues renvoyées par l'API.
-    expect(find.text('2'), findsWidgets);
-
-    final logoFinder = find.byWidgetPredicate(
-      (widget) =>
-          widget is RichText && widget.text.toPlainText() == 'ChezToi',
-    );
-    expect(logoFinder, findsOneWidget);
-
-    final logo = tester.widget<RichText>(logoFinder);
-    final spans = (logo.text as TextSpan).children!;
-    expect((spans[0] as TextSpan).text, 'Chez');
-    expect((spans[1] as TextSpan).text, 'Toi');
-    expect((spans[1] as TextSpan).style?.color, Styles.bleu);
-  });
-
-  testWidgets('L’accueil affiche la recherche, les bannières et les raccourcis',
+  testWidgets('L’accueil invité affiche le logo et le bouton de connexion',
       (WidgetTester tester) async {
     ecranGrand(tester);
-    await tester.pumpWidget(const MaterialApp(home: Accueil(prenom: 'Uriel')));
+    await tester.pumpWidget(MaterialApp(theme: Styles.theme(), home: const Accueil()));
+    await tester.pumpAndSettle();
+
+    final logo = find.byWidgetPredicate(
+      (w) => w is RichText && w.text.toPlainText() == 'ChezToi',
+    );
+    expect(logo, findsOneWidget);
+    Color? couleurToi;
+    tester.widget<RichText>(logo).text.visitChildren((span) {
+      if (span is TextSpan && span.text == 'Toi') couleurToi = span.style?.color;
+      return true;
+    });
+    expect(couleurToi, Styles.menthe);
+
+    expect(find.text('Bienvenue 👋'), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
+    // Pas de cloche pour un invité.
+    expect(find.byIcon(RemixIcons.notification_3_line), findsNothing);
+  });
+
+  testWidgets('L’accueil connecté affiche la cloche et les bannières',
+      (WidgetTester tester) async {
+    ecranGrand(tester);
+    connecter();
+    await tester.pumpWidget(
+      MaterialApp(theme: Styles.theme(), home: const Accueil(prenom: 'Uriel')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Bonjour Uriel 👋'), findsOneWidget);
+    expect(find.text('Où souhaitez-vous habiter ?'), findsOneWidget);
+    expect(find.byIcon(RemixIcons.notification_3_line), findsOneWidget);
+    // Badge des 2 notifications non lues renvoyées par l'API.
+    expect(find.text('2'), findsWidgets);
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('Visitez avant de vous déplacer'), findsOneWidget);
-    expect(find.text('Logements disponibles à Lomé'), findsOneWidget);
-    expect(find.text('Explorer'), findsOneWidget);
-
-    expect(find.text('Favoris'), findsOneWidget);
-    expect(find.text('Réservations'), findsOneWidget);
-    expect(find.text('Alertes'), findsOneWidget);
-    expect(find.text('Comparer'), findsOneWidget);
+    for (final r in ['Favoris', 'Réservations', 'Alertes', 'Comparer']) {
+      expect(find.text(r), findsOneWidget);
+    }
   });
 
   testWidgets('L’accueil ne déborde pas sur un petit écran',
@@ -151,7 +166,10 @@ void main() {
 
     expect(find.text('Récemment publiés'), findsOneWidget);
     expect(find.text('Villa Lomé II'), findsOneWidget);
-    expect(find.text(formatPrix(850000)), findsOneWidget);
+    expect(
+      find.textContaining(formatPrix(850000), findRichText: true),
+      findsOneWidget,
+    );
     expect(find.text('Tokoin, Kara'), findsOneWidget);
     // Sections vides masquées.
     expect(find.text('Les plus consultés'), findsNothing);
@@ -160,6 +178,7 @@ void main() {
   testWidgets('Le bouton favori bascule l’icône cœur et appelle l’API',
       (WidgetTester tester) async {
     ecranGrand(tester);
+    connecter();
     final requetes = installerFausseApi({
       '/api/v1/logements/1/favori/': {'est_favori': true},
     });
@@ -179,6 +198,21 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  testWidgets('Un invité qui touche le cœur doit se connecter',
+      (WidgetTester tester) async {
+    ecranGrand(tester);
+    final requetes = installerFausseApi();
+    await tester.pumpWidget(MaterialApp(theme: Styles.theme(), home: const Accueil()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('favori_1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Un compte, et c’est parti'), findsOneWidget);
+    expect(find.text('Créer un compte gratuit'), findsOneWidget);
+    expect(requetes.any((r) => r.url.path.contains('/favori/')), isFalse);
   });
 
   testWidgets('Les favoris s’affichent et passent en mode comparaison',
@@ -210,7 +244,7 @@ void main() {
     for (final onglet in ['Tableau', 'Logements', 'Demandes', 'Messages', 'Profil']) {
       expect(
         find.descendant(
-          of: find.byType(BottomNavigationBar),
+          of: find.byType(NavigationBar),
           matching: find.text(onglet),
         ),
         findsOneWidget,

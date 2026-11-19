@@ -101,7 +101,7 @@ class _GestionLogementState extends State<GestionLogement> {
       builder: (context) => AlertDialog(
         icon: const Icon(
           RemixIcons.camera_3_line,
-          color: Styles.violet,
+          color: Styles.primaire,
           size: 40,
         ),
         title: const Text('Ajouter une vue 360°'),
@@ -120,7 +120,7 @@ class _GestionLogementState extends State<GestionLogement> {
             child: const Text('Annuler'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Styles.violet),
+            style: FilledButton.styleFrom(backgroundColor: Styles.primaire),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Choisir l’image'),
           ),
@@ -554,7 +554,7 @@ class _GestionLogementState extends State<GestionLogement> {
                         child: ListTile(
                           leading: const Icon(
                             RemixIcons.film_line,
-                            color: Styles.violet,
+                            color: Styles.primaire,
                           ),
                           title: Text(
                             v.legende.isEmpty ? 'Vidéo ${i + 1}' : v.legende,
@@ -588,7 +588,7 @@ class _GestionLogementState extends State<GestionLogement> {
                   left: 0,
                   right: 0,
                   top: 0,
-                  child: LinearProgressIndicator(color: Styles.violet),
+                  child: LinearProgressIndicator(color: Styles.primaire),
                 ),
             ],
           );

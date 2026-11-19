@@ -1,7 +1,9 @@
 import 'package:cheztoi/models/modeles.dart';
+import 'package:cheztoi/services/acces.dart';
 import 'package:cheztoi/services/auth_service.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
 import 'package:cheztoi/services/historique.dart';
+import 'package:cheztoi/services/session.dart';
 import 'package:cheztoi/views/commun/notifications.dart';
 import 'package:cheztoi/views/commun/profil.dart';
 import 'package:cheztoi/views/commun/reservations.dart';
@@ -31,20 +33,20 @@ class Accueil extends StatefulWidget {
     this.onChangementRole,
   });
 
-  /// Transmis au profil pour passer dans l'espace propriétaire.
-  final ValueChanged<UtilisateurAuth>? onChangementRole;
-
   /// Permet aux raccourcis d'ouvrir un autre onglet de la navigation.
   final ValueChanged<int>? onOngletChange;
 
   /// Ouvre l'onglet Recherche avec des critères pré-remplis.
   final ValueChanged<Map<String, dynamic>>? onRecherche;
 
-  /// Prénom de l'utilisateur connecté (facultatif).
+  /// Prénom de l'utilisateur connecté (null pour un invité).
   final String? prenom;
 
   /// Transmis au profil pour la déconnexion.
   final Future<void> Function()? onDeconnexion;
+
+  /// Transmis au profil pour passer dans l'espace propriétaire.
+  final ValueChanged<UtilisateurAuth>? onChangementRole;
 
   @override
   State<Accueil> createState() => _AccueilState();
@@ -61,6 +63,12 @@ class _AccueilState extends State<Accueil> {
     _chargerConsultes();
   }
 
+  @override
+  void dispose() {
+    _rechercheC.dispose();
+    super.dispose();
+  }
+
   Future<void> _chargerConsultes() async {
     try {
       final ids = await Historique.lire();
@@ -69,12 +77,6 @@ class _AccueilState extends State<Accueil> {
       );
       if (mounted) setState(() => _consultes = logements);
     } catch (_) {}
-  }
-
-  @override
-  void dispose() {
-    _rechercheC.dispose();
-    super.dispose();
   }
 
   Future<void> _recharger() async {
@@ -87,78 +89,344 @@ class _AccueilState extends State<Accueil> {
   void _rechercher(Map<String, dynamic> criteres) =>
       widget.onRecherche?.call(criteres);
 
-  void _ouvrir(Widget page) =>
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+  Future<void> _ouvrirReserve(Widget page, String raison) async {
+    if (!await exigerConnexion(context, raison: raison) || !mounted) return;
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => page));
+  }
 
-  Widget _banniere({
-    required String titre,
-    required String sousTitre,
-    required String action,
-    required IconData icone,
-    required Color debut,
-    required Color fin,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      width: 280,
-      child: Material(
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Ink(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [debut, fin],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+  // ------------------------------------------------------------- En-tête
+
+  Widget _entete() {
+    final connecte = Session.estConnecte;
+    final prenom = widget.prenom ?? '';
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: Styles.degradeMarque,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -50,
+            top: -30,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icone, color: Colors.white, size: 26),
-                const SizedBox(height: 20),
-                Text(
-                  titre,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 12, 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Text.rich(
+                        const TextSpan(
+                          style: TextStyle(
+                            fontFamily: Styles.police,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                          children: [
+                            TextSpan(text: 'Chez'),
+                            TextSpan(
+                              text: 'Toi',
+                              style: TextStyle(color: Styles.menthe),
+                            ),
+                          ],
+                        ),
+                        semanticsLabel: 'ChezToi',
+                      ),
+                      const Spacer(),
+                      if (connecte) ...[
+                        IconTheme(
+                          data: const IconThemeData(color: Colors.white),
+                          child: ClocheNotifications(
+                            couleur: Colors.white,
+                            onOuvrirMessages: () =>
+                                widget.onOngletChange?.call(4),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Mon profil',
+                          icon: const Icon(
+                            RemixIcons.user_3_line,
+                            color: Colors.white,
+                            size: 25,
+                          ),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => Profil(
+                                onDeconnexion: widget.onDeconnexion,
+                                onChangementRole: widget.onChangementRole,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ] else
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilledButton.icon(
+                              onPressed: () => ouvrirConnexion(context),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Styles.primaire,
+                                minimumSize: const Size(0, 40),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
+                              ),
+                              icon: const Icon(
+                                RemixIcons.user_3_line,
+                                size: 18,
+                              ),
+                              label: const Text(
+                                'Se connecter',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  sousTitre,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        action,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(height: 18),
+                  Text(
+                    prenom.isEmpty ? 'Bienvenue 👋' : 'Bonjour $prenom 👋',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Où souhaitez-vous habiter ?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: Styles.ombre(2),
+                      ),
+                      child: TextField(
+                        controller: _rechercheC,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (texte) {
+                          final valeur = texte.trim();
+                          _rechercher({if (valeur.isNotEmpty) 'q': valeur});
+                          _rechercheC.clear();
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Ville, quartier, type de logement...',
+                          prefixIcon: const Icon(
+                            RemixIcons.search_2_line,
+                            color: Styles.primaire,
+                          ),
+                          suffixIcon: IconButton(
+                            tooltip: 'Filtres',
+                            onPressed: () => _rechercher(const {}),
+                            icon: const Icon(
+                              RemixIcons.equalizer_line,
+                              color: Styles.texteDoux,
+                            ),
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 17,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      RemixIcons.arrow_right_line,
-                      size: 16,
-                      color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------- Contenu
+
+  Widget _categories(DonneesAccueil a) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final type in Libelles.types.entries)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: _Categorie(
+                icone: iconesTypes[type.key]!,
+                libelle: type.value,
+                total: a.types[type.key] ?? 0,
+                onTap: () => _rechercher({'type': type.key}),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _raccourcis() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: _Raccourci(
+                icone: RemixIcons.heart_3_line,
+                label: 'Favoris',
+                onTap: () => widget.onOngletChange?.call(3),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _Raccourci(
+                icone: RemixIcons.calendar_check_line,
+                label: 'Réservations',
+                onTap: () => _ouvrirReserve(
+                  const MesReservations(),
+                  'Connectez-vous pour retrouver vos réservations.',
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _Raccourci(
+                icone: RemixIcons.alarm_line,
+                label: 'Alertes',
+                onTap: () => _ouvrirReserve(
+                  const Alertes(),
+                  'Connectez-vous pour être prévenu des nouvelles annonces.',
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _Raccourci(
+                icone: RemixIcons.arrow_left_right_line,
+                label: 'Comparer',
+                onTap: () => _ouvrirReserve(
+                  const Favoris(modeComparaison: true),
+                  'Connectez-vous pour comparer vos logements favoris.',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _banniere360(DonneesAccueil a) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      child: Material(
+        borderRadius: BorderRadius.circular(Styles.rayonGrand),
+        clipBehavior: Clip.antiAlias,
+        color: Styles.primaireNuit,
+        child: InkWell(
+          onTap: () => _rechercher({'visite': 'true'}),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 150),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 160,
+                  child: ShaderMask(
+                    shaderCallback: (r) => const LinearGradient(
+                      colors: [Colors.transparent, Colors.black],
+                      stops: [0, 0.5],
+                    ).createShader(r),
+                    blendMode: BlendMode.dstIn,
+                    child: Image.asset(
+                      'assets/immeuble.webp',
+                      fit: BoxFit.cover,
                     ),
-                  ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 150, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Styles.menthe.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'VISITE 360°',
+                          style: TextStyle(
+                            color: Styles.menthe,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const SizedBox(
+                        child: Text(
+                          'Visitez avant de vous déplacer',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            height: 1.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        a.visites.isEmpty
+                            ? 'Bientôt disponible sur de nombreux logements.'
+                            : '${a.visites.length} logement(s) à explorer · Explorer',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -168,125 +436,97 @@ class _AccueilState extends State<Accueil> {
     );
   }
 
+  Widget _villes(DonneesAccueil a) {
+    if (a.villes.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: TitreSection('Explorer par ville'),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 112,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: a.villes.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (_, i) {
+                final v = a.villes[i];
+                return Material(
+                  borderRadius: BorderRadius.circular(Styles.rayon),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => _rechercher({'ville': v.libelle}),
+                    child: Ink(
+                      width: 150,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(
+                            i.isEven
+                                ? 'assets/maison.webp'
+                                : 'assets/immeuble.webp',
+                          ),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: DecoratedBox(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0x11000000), Color(0xCC053B37)],
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                v.libelle,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                '${v.total} logement${v.total > 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _contenu(DonneesAccueil a) {
-    final villePrincipale = a.villes.isEmpty ? 'Lomé' : a.villes.first.libelle;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Bannières défilables
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _banniere(
-                  titre: 'Visitez avant de vous déplacer',
-                  sousTitre: a.visites.isEmpty
-                      ? 'Les visites 360° arrivent bientôt sur ChezToi.'
-                      : '${a.visites.length} logement(s) à explorer en visite 360°.',
-                  action: 'Explorer',
-                  icone: RemixIcons.camera_3_line,
-                  debut: const Color(0xFF3A1C9E),
-                  fin: const Color(0xFF16005D),
-                  onTap: () => _rechercher({'visite': 'true'}),
-                ),
-                const SizedBox(width: 14),
-                _banniere(
-                  titre: 'Logements disponibles à $villePrincipale',
-                  sousTitre:
-                      '${a.total} annonce(s) publiée(s) sur la plateforme.',
-                  action: 'Voir les annonces',
-                  icone: RemixIcons.building_3_line,
-                  debut: const Color(0xFF1D6FE8),
-                  fin: const Color(0xFF0F3D8C),
-                  onTap: () => _rechercher({'ville': villePrincipale}),
-                ),
-                const SizedBox(width: 14),
-                _banniere(
-                  titre: 'Annonces vérifiées',
-                  sousTitre: 'Contrôlées par l’équipe ChezToi pour louer en confiance.',
-                  action: 'Voir',
-                  icone: RemixIcons.shield_check_line,
-                  debut: const Color(0xFF0E9F6E),
-                  fin: const Color(0xFF046C4E),
-                  onTap: () => _rechercher({'verifie': 'true'}),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Catégories
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final type in Libelles.types.entries)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: _Categorie(
-                      icone: iconesTypes[type.key]!,
-                      libelle: type.value,
-                      total: a.types[type.key] ?? 0,
-                      onTap: () => _rechercher({'type': type.key}),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
         const SizedBox(height: 20),
-
-        // Raccourcis
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _Raccourci(
-                    icone: RemixIcons.heart_3_line,
-                    label: 'Favoris',
-                    onTap: () => widget.onOngletChange?.call(3),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _Raccourci(
-                    icone: RemixIcons.calendar_check_line,
-                    label: 'Réservations',
-                    onTap: () => _ouvrir(const MesReservations()),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _Raccourci(
-                    icone: RemixIcons.alarm_line,
-                    label: 'Alertes',
-                    onTap: () => _ouvrir(const Alertes()),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _Raccourci(
-                    icone: RemixIcons.arrow_left_right_line,
-                    label: 'Comparer',
-                    onTap: () => _ouvrir(const Favoris(modeComparaison: true)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _categories(a),
+        const SizedBox(height: 8),
+        _raccourcis(),
         const SizedBox(height: 28),
-
         SectionLogements(
           titre: 'Récemment consultés',
           logements: _consultes,
@@ -297,15 +537,17 @@ class _AccueilState extends State<Accueil> {
           },
         ),
         SectionLogements(
-          titre: 'Recommandés pour vous',
+          titre: Session.estConnecte ? 'Recommandés pour vous' : 'À la une',
           logements: a.recommandes,
           onVoirTout: () => _rechercher(const {}),
         ),
+        _banniere360(a),
         SectionLogements(
           titre: 'Récemment publiés',
           logements: a.recents,
           onVoirTout: () => _rechercher(const {}),
         ),
+        _villes(a),
         SectionLogements(titre: 'Les plus consultés', logements: a.populaires),
         SectionLogements(
           titre: 'Annonces vérifiées',
@@ -317,41 +559,13 @@ class _AccueilState extends State<Accueil> {
           logements: a.visites,
           onVoirTout: () => _rechercher({'visite': 'true'}),
         ),
-
-        if (a.villes.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const TitreSection('Explorer par ville'),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final v in a.villes)
-                      ActionChip(
-                        avatar: const Icon(
-                          RemixIcons.map_pin_line,
-                          size: 16,
-                          color: Styles.violet,
-                        ),
-                        label: Text('${v.libelle} (${v.total})'),
-                        backgroundColor: Colors.white,
-                        side: BorderSide(color: Colors.grey.shade200),
-                        onPressed: () => _rechercher({'ville': v.libelle}),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         if (a.total == 0)
           const EtatVide(
             icone: RemixIcons.home_4_line,
             titre: 'Aucune annonce pour le moment',
-            message: 'Revenez bientôt : de nouveaux logements sont publiés chaque jour.',
+            message:
+                'Revenez bientôt : de nouveaux logements sont publiés '
+                'chaque jour.',
           ),
       ],
     );
@@ -360,135 +574,100 @@ class _AccueilState extends State<Accueil> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Styles.fond,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: const SizedBox.shrink(),
-        leadingWidth: 20,
-        titleSpacing: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
-        title: Padding(
-          padding: const EdgeInsets.only(right: 20),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: 'Mon profil',
-                padding: EdgeInsets.zero,
-                icon: const Icon(
-                  RemixIcons.user_3_line,
-                  size: 26,
-                  color: Styles.violet,
-                ),
-                onPressed: () => _ouvrir(
-                  Profil(
-                    onDeconnexion: widget.onDeconnexion,
-                    onChangementRole: widget.onChangementRole,
-                  ),
-                ),
-              ),
-              ClocheNotifications(
-                onOuvrirMessages: () => widget.onOngletChange?.call(4),
-              ),
-              const Spacer(),
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Styles.texte,
-                  ),
-                  children: [
-                    TextSpan(text: 'Chez'),
-                    TextSpan(
-                      text: 'Toi',
-                      style: TextStyle(color: Styles.bleu),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      body: RefreshIndicator(
+        onRefresh: _recharger,
+        edgeOffset: 120,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            _entete(),
+            FutureBuilder<DonneesAccueil>(
+              future: _futur,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const _SqueletteAccueil();
+                }
+                if (snapshot.hasError) {
+                  return EtatErreur(
+                    erreur: snapshot.error!,
+                    onReessayer: _recharger,
+                  );
+                }
+                return _contenu(snapshot.data!);
+              },
+            ),
+          ],
         ),
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _recharger,
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      widget.prenom == null || widget.prenom!.isEmpty
-                          ? 'Bonjour 👋'
-                          : 'Bonjour ${widget.prenom} 👋',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: Styles.texte,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Trouvez le logement fait pour vous.',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: TextField(
-                        controller: _rechercheC,
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (texte) {
-                          final valeur = texte.trim();
-                          _rechercher({if (valeur.isNotEmpty) 'q': valeur});
-                          _rechercheC.clear();
-                        },
-                        decoration: const InputDecoration(
-                          hintText: 'Ville, quartier, type de logement...',
-                          prefixIcon: Icon(
-                            RemixIcons.search_2_line,
-                            color: Styles.violet,
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 16),
-                        ),
-                      ),
-                    ),
+    );
+  }
+}
+
+/// Emplacements gris animés pendant le chargement.
+class _SqueletteAccueil extends StatefulWidget {
+  const _SqueletteAccueil();
+
+  @override
+  State<_SqueletteAccueil> createState() => _SqueletteAccueilState();
+}
+
+class _SqueletteAccueilState extends State<_SqueletteAccueil>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget bloc(double l, double h, [double r = 16]) => Container(
+      width: l,
+      height: h,
+      decoration: BoxDecoration(
+        color: Styles.bordure,
+        borderRadius: BorderRadius.circular(r),
+      ),
+    );
+    return FadeTransition(
+      opacity: Tween(begin: 0.45, end: 1.0).animate(_anim),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 0, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              child: Row(
+                children: [
+                  for (var i = 0; i < 5; i++) ...[
+                    bloc(64, 64, 20),
+                    const SizedBox(width: 20),
                   ],
-                ),
+                ],
               ),
-              const SizedBox(height: 24),
-              FutureBuilder<DonneesAccueil>(
-                future: _futur,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Chargement();
-                  }
-                  if (snapshot.hasError) {
-                    return EtatErreur(
-                      erreur: snapshot.error!,
-                      onReessayer: _recharger,
-                    );
-                  }
-                  return _contenu(snapshot.data!);
-                },
+            ),
+            const SizedBox(height: 28),
+            bloc(160, 18, 6),
+            const SizedBox(height: 14),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              child: Row(
+                children: [
+                  bloc(250, 230, 22),
+                  const SizedBox(width: 14),
+                  bloc(250, 230, 22),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -510,30 +689,37 @@ class _Categorie extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 92,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
+    return SizedBox(
+      width: 84,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Styles.rayon),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icone, color: Styles.violet),
-            const SizedBox(height: 6),
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: Styles.ombre(),
+              ),
+              child: Icon(icone, color: Styles.primaire, size: 28),
+            ),
+            const SizedBox(height: 8),
             Text(
               libelle,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             Text(
               '$total',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              style: const TextStyle(fontSize: 11, color: Styles.texteDoux),
             ),
           ],
         ),
@@ -555,34 +741,36 @@ class _Raccourci extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
+    return Material(
+      color: Styles.primaireClair,
+      borderRadius: BorderRadius.circular(Styles.rayon),
+      child: InkWell(
         key: ValueKey('raccourci_$label'),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: Styles.violet, size: 24),
-            const SizedBox(height: 8),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Styles.texte),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Styles.rayon),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: Styles.primaire, size: 24),
+              const SizedBox(height: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Styles.primaireFonce,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

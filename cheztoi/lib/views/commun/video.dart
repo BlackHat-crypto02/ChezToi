@@ -109,7 +109,7 @@ class _LecteurVideoState extends State<LecteurVideo> {
                           _controleur,
                           allowScrubbing: true,
                           colors: const VideoProgressColors(
-                            playedColor: Styles.bleu,
+                            playedColor: Styles.primaire,
                           ),
                         ),
                       ),

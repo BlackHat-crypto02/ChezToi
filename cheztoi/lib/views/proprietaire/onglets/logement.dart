@@ -66,7 +66,7 @@ class _MesLogementsState extends State<MesLogements> {
           await nouvelleAnnonce(context);
           _recharger();
         },
-        backgroundColor: Styles.violet,
+        backgroundColor: Styles.primaire,
         foregroundColor: Colors.white,
         icon: const Icon(RemixIcons.add_line),
         label: const Text('Publier'),

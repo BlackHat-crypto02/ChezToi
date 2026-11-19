@@ -136,7 +136,7 @@ class _FormulaireSignalementState extends State<_FormulaireSignalement> {
                         value: entree.key,
                         title: Text(entree.value),
                         dense: true,
-                        activeColor: Styles.violet,
+                        activeColor: Styles.primaire,
                         contentPadding: EdgeInsets.zero,
                       ),
                   ],

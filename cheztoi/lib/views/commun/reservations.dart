@@ -65,7 +65,7 @@ class CarteReservation extends StatelessWidget {
                           : r.logement.localisation,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Styles.violet,
+                        color: Styles.primaire,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -131,8 +131,8 @@ class _MesReservationsState extends State<MesReservations> {
         appBar: AppBar(
           title: const Text('Mes réservations'),
           bottom: TabBar(
-            labelColor: Styles.violet,
-            indicatorColor: Styles.violet,
+            labelColor: Styles.primaire,
+            indicatorColor: Styles.primaire,
             tabs: [for (final titre in _onglets.keys) Tab(text: titre)],
           ),
         ),

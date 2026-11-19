@@ -53,10 +53,10 @@ class _TableauState extends State<Tableau> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Styles.violet.withValues(alpha: 0.08),
+                  color: Styles.primaire.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icone, color: Styles.violet, size: 20),
+                child: Icon(icone, color: Styles.primaire, size: 20),
               ),
               const SizedBox(height: 12),
               FittedBox(
@@ -67,7 +67,7 @@ class _TableauState extends State<Tableau> {
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: Styles.violet,
+                    color: Styles.primaire,
                   ),
                 ),
               ),
@@ -102,7 +102,7 @@ class _TableauState extends State<Tableau> {
               TextSpan(text: 'Chez'),
               TextSpan(
                 text: 'Toi',
-                style: TextStyle(color: Styles.bleu),
+                style: TextStyle(color: Styles.primaire),
               ),
               TextSpan(
                 text: '  Pro',
@@ -151,7 +151,7 @@ class _TableauState extends State<Tableau> {
                 const SizedBox(height: 20),
                 if (s.demandesEnAttente > 0)
                   Card(
-                    color: Styles.violet,
+                    color: Styles.primaire,
                     child: ListTile(
                       onTap: () => widget.onOngletChange?.call(2),
                       leading: const Icon(

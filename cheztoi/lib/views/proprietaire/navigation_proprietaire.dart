@@ -8,7 +8,6 @@ import 'package:cheztoi/views/commun/profil.dart';
 import 'package:cheztoi/views/proprietaire/onglets/demande.dart';
 import 'package:cheztoi/views/proprietaire/onglets/logement.dart';
 import 'package:cheztoi/views/proprietaire/onglets/tableau.dart';
-import 'package:cheztoi/widget/styles.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:remixicon/remixicon.dart';
@@ -113,48 +112,46 @@ class _NavigationProprietaireState extends State<NavigationProprietaire> {
         onIndexTap(0);
       },
       child: Scaffold(
-        backgroundColor: Styles.fond,
         body: _page(),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          currentIndex: selectedIndex,
-          onTap: onIndexTap,
-          showUnselectedLabels: true,
-          selectedItemColor: Styles.violet,
-          unselectedItemColor: Colors.grey.shade600,
-          backgroundColor: Colors.white,
-          elevation: 0,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(RemixIcons.dashboard_line),
-              activeIcon: Icon(RemixIcons.dashboard_fill),
-              label: 'Tableau',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(RemixIcons.building_3_line),
-              activeIcon: Icon(RemixIcons.building_3_fill),
-              label: 'Logements',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(RemixIcons.calendar_todo_line),
-              activeIcon: Icon(RemixIcons.calendar_todo_fill),
-              label: 'Demandes',
-            ),
-            BottomNavigationBarItem(
-              icon: Badge(
-                isLabelVisible: _messagesNonLus > 0,
-                label: Text('$_messagesNonLus'),
-                child: const Icon(RemixIcons.chat_3_line),
+        bottomNavigationBar: DecoratedBox(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: Color(0xFFE3EAE8))),
+          ),
+          child: NavigationBar(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: onIndexTap,
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(RemixIcons.dashboard_line),
+                selectedIcon: Icon(RemixIcons.dashboard_fill),
+                label: 'Tableau',
               ),
-              activeIcon: const Icon(RemixIcons.chat_3_fill),
-              label: 'Messages',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(RemixIcons.user_3_line),
-              activeIcon: Icon(RemixIcons.user_3_fill),
-              label: 'Profil',
-            ),
-          ],
+              const NavigationDestination(
+                icon: Icon(RemixIcons.building_3_line),
+                selectedIcon: Icon(RemixIcons.building_3_fill),
+                label: 'Logements',
+              ),
+              const NavigationDestination(
+                icon: Icon(RemixIcons.calendar_todo_line),
+                selectedIcon: Icon(RemixIcons.calendar_todo_fill),
+                label: 'Demandes',
+              ),
+              NavigationDestination(
+                icon: Badge(
+                  isLabelVisible: _messagesNonLus > 0,
+                  label: Text('$_messagesNonLus'),
+                  child: const Icon(RemixIcons.chat_3_line),
+                ),
+                selectedIcon: const Icon(RemixIcons.chat_3_fill),
+                label: 'Messages',
+              ),
+              const NavigationDestination(
+                icon: Icon(RemixIcons.user_3_line),
+                selectedIcon: Icon(RemixIcons.user_3_fill),
+                label: 'Profil',
+              ),
+            ],
+          ),
         ),
       ),
     );

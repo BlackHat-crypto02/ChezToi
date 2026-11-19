@@ -1,4 +1,5 @@
 import 'package:cheztoi/models/modeles.dart';
+import 'package:cheztoi/services/acces.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
 import 'package:cheztoi/services/historique.dart';
 import 'package:cheztoi/services/session.dart';
@@ -51,7 +52,8 @@ class _FicheState extends State<_Fiche> {
 
   Logement get l => widget.logement;
 
-  bool get _estMonLogement => l.proprietaire?.id == Session.id;
+  bool get _estMonLogement =>
+      Session.id != null && l.proprietaire?.id == Session.id;
 
   @override
   void initState() {
@@ -98,6 +100,13 @@ class _FicheState extends State<_Fiche> {
   }
 
   Future<void> _contacter() async {
+    if (!await exigerConnexion(
+          context,
+          raison: 'Connectez-vous pour écrire au propriétaire de ce logement.',
+        ) ||
+        !mounted) {
+      return;
+    }
     setState(() => _contact = true);
     try {
       final conversation = await ChezToiApi.instance.demarrerConversation(
@@ -117,6 +126,14 @@ class _FicheState extends State<_Fiche> {
   }
 
   Future<void> _reserver() async {
+    if (!await exigerConnexion(
+          context,
+          raison: 'Connectez-vous pour envoyer votre demande de réservation. '
+              'Cela ne prend qu’une minute.',
+        ) ||
+        !mounted) {
+      return;
+    }
     final reservee = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => ReservationForm(logement: l)),
     );
@@ -128,7 +145,7 @@ class _FicheState extends State<_Fiche> {
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
-      backgroundColor: Styles.violet,
+      backgroundColor: Styles.primaire,
       foregroundColor: Colors.white,
       actions: [
         if (!_estMonLogement)
@@ -145,7 +162,15 @@ class _FicheState extends State<_Fiche> {
           IconButton(
             tooltip: 'Signaler',
             icon: const Icon(RemixIcons.flag_line),
-            onPressed: () => signaler(context, logementId: l.id),
+            onPressed: () async {
+              if (await exigerConnexion(
+                    context,
+                    raison: 'Connectez-vous pour signaler cette annonce.',
+                  ) &&
+                  mounted) {
+                signaler(context, logementId: l.id);
+              }
+            },
           ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -197,7 +222,7 @@ class _FicheState extends State<_Fiche> {
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: Styles.violet,
+                    foregroundColor: Styles.primaire,
                   ),
                   icon: const Icon(RemixIcons.camera_3_line, size: 18),
                   label: const Text('Visite 360°'),
@@ -274,7 +299,7 @@ class _FicheState extends State<_Fiche> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icone, size: 18, color: Styles.violet),
+                Icon(icone, size: 18, color: Styles.primaire),
                 const SizedBox(width: 6),
                 Text(texte, style: const TextStyle(fontSize: 13)),
               ],
@@ -356,7 +381,7 @@ class _FicheState extends State<_Fiche> {
                 if (l.telephoneProprietaire.isNotEmpty)
                   Text(
                     l.telephoneProprietaire,
-                    style: const TextStyle(fontSize: 12, color: Styles.violet),
+                    style: const TextStyle(fontSize: 12, color: Styles.primaire),
                   ),
               ],
             ),
@@ -411,7 +436,7 @@ class _FicheState extends State<_Fiche> {
                       const Icon(
                         RemixIcons.map_pin_3_line,
                         size: 16,
-                        color: Styles.violet,
+                        color: Styles.primaire,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -422,7 +447,7 @@ class _FicheState extends State<_Fiche> {
                             l.ville,
                             l.region,
                           ].where((e) => e.isNotEmpty).join(', '),
-                          style: const TextStyle(color: Styles.violet),
+                          style: const TextStyle(color: Styles.primaire),
                         ),
                       ),
                     ],
@@ -484,7 +509,7 @@ class _FicheState extends State<_Fiche> {
                                 width: 150,
                                 height: 90,
                                 decoration: BoxDecoration(
-                                  color: Styles.violet,
+                                  color: Styles.primaire,
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Column(
@@ -523,7 +548,7 @@ class _FicheState extends State<_Fiche> {
                               avatar: const Icon(
                                 RemixIcons.check_line,
                                 size: 16,
-                                color: Styles.violet,
+                                color: Styles.primaire,
                               ),
                               label: Text(e.nom),
                               backgroundColor: Colors.white,
@@ -698,7 +723,7 @@ class _BarreReservation extends StatelessWidget {
           IconButton.outlined(
             tooltip: 'Contacter le propriétaire',
             onPressed: onContacter,
-            icon: const Icon(RemixIcons.chat_3_line, color: Styles.violet),
+            icon: const Icon(RemixIcons.chat_3_line, color: Styles.primaire),
           ),
           const SizedBox(width: 8),
           FilledButton(

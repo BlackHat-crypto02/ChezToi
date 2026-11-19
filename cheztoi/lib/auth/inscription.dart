@@ -74,7 +74,7 @@ class _InscriptionState extends State<Inscription> {
       fillColor: Colors.white,
       border: Styles.border(Colors.grey.shade300),
       enabledBorder: Styles.border(Colors.grey.shade300),
-      focusedBorder: Styles.border(Styles.violet, width: 2),
+      focusedBorder: Styles.border(Styles.primaire, width: 2),
     );
   }
 
@@ -85,7 +85,7 @@ class _InscriptionState extends State<Inscription> {
         fontSize: 12,
         fontWeight: FontWeight.bold,
         letterSpacing: 1,
-        color: Styles.violet,
+        color: Styles.primaire,
       ),
     );
   }
@@ -211,7 +211,7 @@ class _InscriptionState extends State<Inscription> {
                               .textTheme
                               .headlineSmall
                               ?.copyWith(
-                                color: Styles.violet,
+                                color: Styles.primaire,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -401,7 +401,7 @@ class _InscriptionState extends State<Inscription> {
                         FilledButton(
                           onPressed: _isLoading ? null : _inscrire,
                           style: FilledButton.styleFrom(
-                            backgroundColor: Styles.violet,
+                            backgroundColor: Styles.primaire,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -464,10 +464,10 @@ class _RoleButton extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? Styles.violet : Colors.white,
+          color: selected ? Styles.primaire : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? Styles.violet : Colors.grey.shade300,
+            color: selected ? Styles.primaire : Colors.grey.shade300,
             width: selected ? 2 : 1,
           ),
         ),
@@ -477,14 +477,14 @@ class _RoleButton extends StatelessWidget {
             Icon(
               icon,
               size: 26,
-              color: selected ? Colors.white : Styles.violet,
+              color: selected ? Colors.white : Styles.primaire,
             ),
             const SizedBox(height: 6),
             Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : Styles.violet,
+                color: selected ? Colors.white : Styles.primaire,
               ),
             ),
           ],

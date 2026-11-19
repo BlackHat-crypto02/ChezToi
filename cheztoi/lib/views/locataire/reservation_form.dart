@@ -81,7 +81,7 @@ class _ReservationFormState extends State<ReservationForm> {
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: Theme.of(context).colorScheme
-              .copyWith(primary: Styles.violet),
+              .copyWith(primary: Styles.primaire),
         ),
         child: child!,
       ),
@@ -136,7 +136,7 @@ class _ReservationFormState extends State<ReservationForm> {
         builder: (context) => AlertDialog(
           icon: Icon(
             confirmee ? RemixIcons.checkbox_circle_fill : RemixIcons.time_line,
-            color: confirmee ? Colors.green : Styles.violet,
+            color: confirmee ? Colors.green : Styles.primaire,
             size: 48,
           ),
           title: Text(
@@ -150,7 +150,7 @@ class _ReservationFormState extends State<ReservationForm> {
           ),
           actions: [
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Styles.violet),
+              style: FilledButton.styleFrom(backgroundColor: Styles.primaire),
               onPressed: () => Navigator.pop(context),
               child: const Text('Compris'),
             ),
@@ -212,12 +212,12 @@ class _ReservationFormState extends State<ReservationForm> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: periode == null ? Styles.violet : Colors.grey.shade300,
+                  color: periode == null ? Styles.primaire : Colors.grey.shade300,
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(RemixIcons.calendar_2_line, color: Styles.violet),
+                  const Icon(RemixIcons.calendar_2_line, color: Styles.primaire),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -250,7 +250,7 @@ class _ReservationFormState extends State<ReservationForm> {
             ),
             child: Row(
               children: [
-                const Icon(RemixIcons.group_line, color: Styles.violet),
+                const Icon(RemixIcons.group_line, color: Styles.primaire),
                 const SizedBox(width: 12),
                 const Expanded(child: Text('Personnes')),
                 IconButton(

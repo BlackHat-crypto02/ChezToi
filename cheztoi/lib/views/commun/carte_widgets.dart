@@ -61,8 +61,8 @@ class CartePosition extends StatelessWidget {
                 point: point,
                 radius: 250,
                 useRadiusInMeter: true,
-                color: Styles.violet.withValues(alpha: 0.18),
-                borderColor: Styles.violet,
+                color: Styles.primaire.withValues(alpha: 0.18),
+                borderColor: Styles.primaire,
                 borderStrokeWidth: 2,
               ),
             ],
@@ -77,7 +77,7 @@ class CartePosition extends StatelessWidget {
                 alignment: Alignment.topCenter,
                 child: const Icon(
                   RemixIcons.map_pin_2_fill,
-                  color: Styles.violet,
+                  color: Styles.primaire,
                   size: 40,
                 ),
               ),
@@ -146,7 +146,7 @@ class _SelecteurPositionState extends State<SelecteurPosition> {
                       alignment: Alignment.topCenter,
                       child: const Icon(
                         RemixIcons.map_pin_2_fill,
-                        color: Styles.violet,
+                        color: Styles.primaire,
                         size: 44,
                       ),
                     ),
@@ -181,7 +181,7 @@ class _SelecteurPositionState extends State<SelecteurPosition> {
                 ? null
                 : () => Navigator.pop(context, _point),
             style: FilledButton.styleFrom(
-              backgroundColor: Styles.violet,
+              backgroundColor: Styles.primaire,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: const Text('Valider cette position'),

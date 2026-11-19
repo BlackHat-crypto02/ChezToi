@@ -105,7 +105,7 @@ class _DemandeState extends State<Demande> {
                         child: FilledButton(
                           onPressed: () => _repondre(r, true),
                           style: FilledButton.styleFrom(
-                            backgroundColor: Styles.violet,
+                            backgroundColor: Styles.primaire,
                           ),
                           child: const Text('Accepter'),
                         ),
@@ -132,8 +132,8 @@ class _DemandeState extends State<Demande> {
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
           bottom: TabBar(
-            labelColor: Styles.violet,
-            indicatorColor: Styles.violet,
+            labelColor: Styles.primaire,
+            indicatorColor: Styles.primaire,
             tabs: [for (final t in _onglets.keys) Tab(text: t)],
           ),
         ),

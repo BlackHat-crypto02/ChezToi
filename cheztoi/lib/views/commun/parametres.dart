@@ -49,7 +49,7 @@ class _VerificationCompteState extends State<VerificationCompte> {
               ListTile(
                 leading: const Icon(
                   RemixIcons.file_text_line,
-                  color: Styles.violet,
+                  color: Styles.primaire,
                 ),
                 title: Text(e.value),
                 onTap: () => Navigator.pop(context, e.key),
@@ -151,7 +151,7 @@ class _VerificationCompteState extends State<VerificationCompte> {
                       verifie
                           ? RemixIcons.verified_badge_fill
                           : RemixIcons.shield_user_line,
-                      color: verifie ? Colors.green : Styles.violet,
+                      color: verifie ? Colors.green : Styles.primaire,
                       size: 36,
                     ),
                     const SizedBox(width: 14),
@@ -297,7 +297,7 @@ class _PreferencesNotificationsState extends State<PreferencesNotifications> {
                       for (final e in _libelles.entries)
                         if (valeurs.containsKey(e.key))
                           SwitchListTile(
-                            activeThumbColor: Styles.violet,
+                            activeThumbColor: Styles.primaire,
                             title: Text(e.value.$1),
                             subtitle: Text(e.value.$2),
                             value: valeurs[e.key]!,
@@ -396,7 +396,7 @@ class Assistance extends StatelessWidget {
           Card(
             color: Colors.white,
             child: ListTile(
-              leading: const Icon(RemixIcons.mail_line, color: Styles.violet),
+              leading: const Icon(RemixIcons.mail_line, color: Styles.primaire),
               title: const Text('Écrire au support'),
               subtitle: const Text(emailSupport),
               onTap: () async {
@@ -419,7 +419,7 @@ class Assistance extends StatelessWidget {
           Card(
             color: Colors.white,
             child: ListTile(
-              leading: const Icon(RemixIcons.flag_line, color: Styles.violet),
+              leading: const Icon(RemixIcons.flag_line, color: Styles.primaire),
               title: const Text('Signaler un problème'),
               subtitle: const Text('Fraude, comportement abusif, autre'),
               onTap: () => signalerProbleme(context),

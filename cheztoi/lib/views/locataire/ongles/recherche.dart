@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cheztoi/models/modeles.dart';
+import 'package:cheztoi/services/acces.dart';
 import 'package:cheztoi/services/chez_toi_api.dart';
 import 'package:cheztoi/services/position.dart';
 import 'package:cheztoi/widget/commun.dart';
@@ -216,6 +217,14 @@ class _RechercheState extends State<Recherche> {
   }
 
   Future<void> _enregistrer() async {
+    if (!await exigerConnexion(
+          context,
+          raison: 'Connectez-vous pour créer une alerte : nous vous préviendrons '
+              'dès qu’un logement correspondra à votre recherche.',
+        ) ||
+        !mounted) {
+      return;
+    }
     final nom = await demanderTexte(
       context,
       titre: 'Créer une alerte',
@@ -253,7 +262,7 @@ class _RechercheState extends State<Recherche> {
                 hintText: 'Ville, quartier, type…',
                 prefixIcon: const Icon(
                   RemixIcons.search_2_line,
-                  color: Styles.violet,
+                  color: Styles.primaire,
                 ),
                 suffixIcon: _texte.text.isEmpty
                     ? null
@@ -269,7 +278,7 @@ class _RechercheState extends State<Recherche> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: Styles.border(Colors.grey.shade200),
                 enabledBorder: Styles.border(Colors.grey.shade200),
-                focusedBorder: Styles.border(Styles.violet, width: 2),
+                focusedBorder: Styles.border(Styles.primaire, width: 2),
               ),
             ),
           ),
@@ -277,11 +286,11 @@ class _RechercheState extends State<Recherche> {
           Badge(
             isLabelVisible: _nombreFiltres > 0,
             label: Text('$_nombreFiltres'),
-            backgroundColor: Styles.bleu,
+            backgroundColor: Styles.primaire,
             child: IconButton.filled(
               tooltip: 'Filtres',
               style: IconButton.styleFrom(
-                backgroundColor: Styles.violet,
+                backgroundColor: Styles.primaire,
                 padding: const EdgeInsets.all(12),
               ),
               onPressed: _ouvrirFiltres,
@@ -299,7 +308,7 @@ class _RechercheState extends State<Recherche> {
       children: [
         for (final s in _suggestions)
           ListTile(
-            leading: const Icon(RemixIcons.map_pin_line, color: Styles.violet),
+            leading: const Icon(RemixIcons.map_pin_line, color: Styles.primaire),
             title: Text(s.libelle),
             subtitle: Text('${s.total} logement(s) · ${s.type}'),
             onTap: () => _soumettre(s.libelle),
@@ -406,7 +415,7 @@ class _RechercheState extends State<Recherche> {
                             : 'Autour de moi',
                       ),
                       selected: _autourDeMoi,
-                      selectedColor: Styles.violet.withValues(alpha: 0.15),
+                      selectedColor: Styles.primaire.withValues(alpha: 0.15),
                       showCheckmark: false,
                       onSelected: _localisation
                           ? null
@@ -460,14 +469,14 @@ class _RechercheState extends State<Recherche> {
                             const Icon(
                               RemixIcons.sort_desc,
                               size: 18,
-                              color: Styles.violet,
+                              color: Styles.primaire,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _tri == 'proximite'
                                   ? 'Plus proches'
                                   : _tris[_tri]!,
-                              style: const TextStyle(color: Styles.violet),
+                              style: const TextStyle(color: Styles.primaire),
                             ),
                           ],
                         ),
@@ -629,8 +638,8 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
           FilterChip(
             label: Text(e.value),
             selected: selection.contains(e.key),
-            selectedColor: Styles.violet.withValues(alpha: 0.15),
-            checkmarkColor: Styles.violet,
+            selectedColor: Styles.primaire.withValues(alpha: 0.15),
+            checkmarkColor: Styles.primaire,
             onSelected: (oui) => surChange(
               oui ? {...selection, e.key} : ({...selection}..remove(e.key)),
             ),
@@ -780,14 +789,14 @@ class _FiltresRechercheState extends State<FiltresRecherche> {
                 _titre('Confiance'),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeThumbColor: Styles.violet,
+                  activeThumbColor: Styles.primaire,
                   title: const Text('Annonces vérifiées uniquement'),
                   value: _verifie,
                   onChanged: (v) => setState(() => _verifie = v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeThumbColor: Styles.violet,
+                  activeThumbColor: Styles.primaire,
                   title: const Text('Avec visite virtuelle 360°'),
                   value: _visite,
                   onChanged: (v) => setState(() => _visite = v),

@@ -108,13 +108,13 @@ class _NotificationsState extends State<Notifications> {
                 return ListTile(
                   tileColor: n.lue
                       ? null
-                      : Styles.violet.withValues(alpha: 0.05),
+                      : Styles.primaire.withValues(alpha: 0.05),
                   onTap: () => _ouvrir(n),
                   leading: CircleAvatar(
-                    backgroundColor: Styles.violet.withValues(alpha: 0.1),
+                    backgroundColor: Styles.primaire.withValues(alpha: 0.1),
                     child: Icon(
                       iconeNotification(n.type),
-                      color: Styles.violet,
+                      color: Styles.primaire,
                     ),
                   ),
                   title: Text(
@@ -140,9 +140,14 @@ class _NotificationsState extends State<Notifications> {
 
 /// Icône cloche avec le nombre de notifications non lues.
 class ClocheNotifications extends StatefulWidget {
-  const ClocheNotifications({super.key, this.onOuvrirMessages});
+  const ClocheNotifications({
+    super.key,
+    this.onOuvrirMessages,
+    this.couleur = Styles.primaire,
+  });
 
   final VoidCallback? onOuvrirMessages;
+  final Color couleur;
 
   @override
   State<ClocheNotifications> createState() => _ClocheNotificationsState();
@@ -182,10 +187,10 @@ class _ClocheNotificationsState extends State<ClocheNotifications> {
         isLabelVisible: _nonLues > 0,
         label: Text('$_nonLues'),
         backgroundColor: Colors.red,
-        child: const Icon(
+        child: Icon(
           RemixIcons.notification_3_line,
           size: 26,
-          color: Styles.violet,
+          color: widget.couleur,
         ),
       ),
     );

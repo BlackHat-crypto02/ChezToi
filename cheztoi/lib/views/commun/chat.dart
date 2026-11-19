@@ -94,7 +94,7 @@ class _ConversationsState extends State<Conversations> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Styles.violet,
+                            color: Styles.primaire,
                           ),
                         ),
                       Text(
@@ -119,7 +119,7 @@ class _ConversationsState extends State<Conversations> {
                       if (c.nonLus > 0)
                         Badge(
                           label: Text('${c.nonLus}'),
-                          backgroundColor: Styles.bleu,
+                          backgroundColor: Styles.primaire,
                         )
                       else if (c.bloquee)
                         const Icon(
@@ -283,7 +283,7 @@ class _ChatPageState extends State<ChatPage> {
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
         decoration: BoxDecoration(
-          color: moi ? Styles.violet : Colors.white,
+          color: moi ? Styles.primaire : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -368,7 +368,7 @@ class _ChatPageState extends State<ChatPage> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Styles.violet,
+                        color: Styles.primaire,
                       ),
                     ),
                 ],
@@ -454,7 +454,7 @@ class _ChatPageState extends State<ChatPage> {
                       onPressed: _envoi ? null : _envoyerPhoto,
                       icon: const Icon(
                         RemixIcons.image_add_line,
-                        color: Styles.violet,
+                        color: Styles.primaire,
                       ),
                     ),
                     Expanded(
@@ -482,7 +482,7 @@ class _ChatPageState extends State<ChatPage> {
                     IconButton.filled(
                       tooltip: 'Envoyer',
                       style: IconButton.styleFrom(
-                        backgroundColor: Styles.violet,
+                        backgroundColor: Styles.primaire,
                       ),
                       onPressed: _envoi ? null : () => _envoyer(),
                       icon: const Icon(RemixIcons.send_plane_2_fill),

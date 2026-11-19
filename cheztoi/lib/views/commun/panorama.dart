@@ -91,7 +91,7 @@ class _VisiteVirtuelleState extends State<VisiteVirtuelle> {
                     selectedColor: Colors.white,
                     backgroundColor: Colors.black54,
                     labelStyle: TextStyle(
-                      color: i == _piece ? Styles.violet : Colors.white,
+                      color: i == _piece ? Styles.primaire : Colors.white,
                     ),
                     onSelected: (_) => setState(() => _piece = i),
                   ),

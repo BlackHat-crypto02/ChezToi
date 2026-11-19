@@ -68,7 +68,7 @@ class Profil extends StatelessWidget {
   }) {
     return ListTile(
       onTap: onTap,
-      leading: Icon(icone, color: couleur ?? Styles.violet),
+      leading: Icon(icone, color: couleur ?? Styles.primaire),
       title: Text(titre, style: TextStyle(color: couleur)),
       subtitle: sousTitre == null ? null : Text(sousTitre),
       trailing: const Icon(RemixIcons.arrow_right_s_line),
@@ -390,7 +390,7 @@ class _ModifierProfilState extends State<ModifierProfil> {
                   children: [
                     CircleAvatar(
                       radius: 46,
-                      backgroundColor: Styles.violet.withValues(alpha: 0.12),
+                      backgroundColor: Styles.primaire.withValues(alpha: 0.12),
                       foregroundImage: _photo != null
                           ? MemoryImage(Uint8List.fromList(_photo!.octets))
                           : (_u.photo != null ? NetworkImage(_u.photo!) : null)
@@ -398,7 +398,7 @@ class _ModifierProfilState extends State<ModifierProfil> {
                       child: const Icon(
                         RemixIcons.user_3_line,
                         size: 40,
-                        color: Styles.violet,
+                        color: Styles.primaire,
                       ),
                     ),
                     const Positioned(
@@ -406,7 +406,7 @@ class _ModifierProfilState extends State<ModifierProfil> {
                       bottom: 0,
                       child: CircleAvatar(
                         radius: 15,
-                        backgroundColor: Styles.violet,
+                        backgroundColor: Styles.primaire,
                         child: Icon(
                           RemixIcons.camera_line,
                           size: 16,

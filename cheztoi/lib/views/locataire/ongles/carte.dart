@@ -109,7 +109,7 @@ class _CarteState extends State<Carte> {
           duration: const Duration(milliseconds: 150),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: choisi ? Styles.bleu : Styles.violet,
+            color: choisi ? Styles.primaire : Styles.primaire,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: const [
@@ -155,7 +155,7 @@ class _CarteState extends State<Carte> {
                     CircleMarker(
                       point: _moi!,
                       radius: 9,
-                      color: Styles.bleu,
+                      color: Styles.primaire,
                       borderColor: Colors.white,
                       borderStrokeWidth: 3,
                     ),
@@ -192,7 +192,7 @@ class _CarteState extends State<Carte> {
                             children: [
                               const Icon(
                                 RemixIcons.search_2_line,
-                                color: Styles.violet,
+                                color: Styles.primaire,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -226,7 +226,7 @@ class _CarteState extends State<Carte> {
                             )
                           : const Icon(
                               RemixIcons.focus_3_line,
-                              color: Styles.violet,
+                              color: Styles.primaire,
                             ),
                     ),
                   ),

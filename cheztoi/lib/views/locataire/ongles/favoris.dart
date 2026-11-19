@@ -112,7 +112,7 @@ class _FavorisState extends State<Favoris> {
                   trailing: _selectionActive
                       ? Checkbox(
                           value: _selection.contains(l.id),
-                          activeColor: Styles.violet,
+                          activeColor: Styles.primaire,
                           onChanged: (_) => _basculer(l.id),
                         )
                       : null,

@@ -86,7 +86,7 @@ class _AlertesState extends State<Alertes> {
                     children: [
                       Switch(
                         value: r.alerteActive,
-                        activeThumbColor: Styles.violet,
+                        activeThumbColor: Styles.primaire,
                         onChanged: (v) async {
                           try {
                             await ChezToiApi.instance.activerAlerte(r.id, v);
