@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from apps.core.permissions import EstProprietaire, est_admin
 
-from .models import Equipement, Favori, Logement, Panorama, Photo, RechercheEnregistree
+from .models import Equipement, Favori, Logement, Panorama, Photo, RechercheEnregistree, Video
 from .serializers import (
     EquipementSerializer,
     LogementDetailSerializer,
@@ -18,6 +18,7 @@ from .serializers import (
     PanoramaSerializer,
     PhotoSerializer,
     RechercheEnregistreeSerializer,
+    VideoSerializer,
 )
 from .services import annoter, filtrer, logements_publics, trier
 
@@ -82,7 +83,7 @@ class LogementDetailView(generics.RetrieveAPIView):
             if user.is_authenticated:
                 visible |= Q(proprietaire=user)
             queryset = queryset.filter(visible)
-        return annoter(queryset, user).prefetch_related("equipements", "panoramas")
+        return annoter(queryset, user).prefetch_related("equipements", "panoramas", "videos")
 
     def retrieve(self, request, *args, **kwargs):
         logement = self.get_object()
@@ -329,7 +330,7 @@ class MonLogementView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return annoter(
             Logement.objects.filter(proprietaire=self.request.user), self.request.user
-        ).prefetch_related("equipements", "panoramas")
+        ).prefetch_related("equipements", "panoramas", "videos")
 
     def get_serializer_class(self):
         if self.request.method in ("PUT", "PATCH"):
@@ -495,6 +496,34 @@ class PanoramaDetailView(APIView):
         panorama = get_object_or_404(Panorama, pk=panorama_id, logement=logement)
         panorama.image.delete(save=False)
         panorama.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class VideoUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated, EstProprietaire]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def post(self, request, pk):
+        logement = logement_du_proprietaire(request, pk)
+        if logement.videos.count() >= 3:
+            raise ValidationError("3 vidéos maximum par annonce.")
+        serializer = VideoSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        video = serializer.save(logement=logement)
+        return Response(
+            VideoSerializer(video, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class VideoDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, EstProprietaire]
+
+    def delete(self, request, pk, video_id):
+        logement = logement_du_proprietaire(request, pk)
+        video = get_object_or_404(Video, pk=video_id, logement=logement)
+        video.fichier.delete(save=False)
+        video.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

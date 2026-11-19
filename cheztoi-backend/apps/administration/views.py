@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, permissions, serializers
@@ -24,6 +25,8 @@ from apps.reservations.serializers import AvisSerializer, ReservationSerializer
 from apps.reservations.services import actualiser_statuts
 from apps.signalements.models import Signalement
 from apps.signalements.views import SignalementSerializer
+from apps.users.compte import JustificatifSerializer
+from apps.users.models import Justificatif
 from apps.users.serializers import UserListSerializer
 
 User = get_user_model()
@@ -158,7 +161,7 @@ class AdminLogementListView(generics.ListAPIView):
             )
         if params.get("geolocalises"):
             queryset = queryset.filter(latitude__isnull=False)
-        return annoter(queryset).prefetch_related("equipements", "panoramas").order_by(
+        return annoter(queryset).prefetch_related("equipements", "panoramas", "videos").order_by(
             "-modifie_le"
         )
 
@@ -168,7 +171,7 @@ class AdminLogementDetailView(generics.RetrieveAPIView):
     serializer_class = AdminLogementSerializer
 
     def get_queryset(self):
-        return annoter(Logement.objects.all()).prefetch_related("equipements", "panoramas")
+        return annoter(Logement.objects.all()).prefetch_related("equipements", "panoramas", "videos")
 
 
 class ModererLogementView(APIView):
@@ -436,3 +439,78 @@ class AdminUtilisateurView(APIView):
         if modifies:
             user.save(update_fields=modifies)
         return Response(UserListSerializer(user).data)
+
+
+# ------------------------------------------------------------ Justificatifs
+
+
+class AdminJustificatifSerializer(JustificatifSerializer):
+    utilisateur = serializers.SerializerMethodField()
+
+    class Meta(JustificatifSerializer.Meta):
+        fields = JustificatifSerializer.Meta.fields + ("utilisateur",)
+
+    def get_utilisateur(self, obj):
+        u = obj.user
+        return {
+            "id": u.id,
+            "nom_complet": u.get_full_name() or u.username,
+            "email": u.email,
+            "phone": u.phone,
+            "role": u.role,
+            "verified": u.verified,
+        }
+
+
+class AdminJustificatifListView(generics.ListAPIView):
+    permission_classes = ADMIN
+    serializer_class = AdminJustificatifSerializer
+
+    def get_queryset(self):
+        queryset = Justificatif.objects.select_related("user")
+        statut = self.request.query_params.get("statut")
+        if statut:
+            queryset = queryset.filter(statut=statut)
+        return queryset
+
+
+class AdminJustificatifView(APIView):
+    """PATCH {statut: accepte|refuse, motif}. Accepter vérifie le compte."""
+
+    permission_classes = ADMIN
+
+    def patch(self, request, pk):
+        justificatif = get_object_or_404(Justificatif.objects.select_related("user"), pk=pk)
+        statut = request.data.get("statut")
+        if statut not in (Justificatif.Statut.ACCEPTE, Justificatif.Statut.REFUSE):
+            raise ValidationError("Statut attendu : accepte ou refuse.")
+        motif = str(request.data.get("motif", "")).strip()
+        if statut == Justificatif.Statut.REFUSE and not motif:
+            raise ValidationError({"motif": "Expliquez le refus au propriétaire."})
+        justificatif.statut = statut
+        justificatif.motif = motif
+        justificatif.traite_le = timezone.now()
+        justificatif.save(update_fields=["statut", "motif", "traite_le"])
+        user = justificatif.user
+        if statut == Justificatif.Statut.ACCEPTE and not user.verified:
+            user.verified = True
+            user.save(update_fields=["verified"])
+        notifier(
+            user,
+            Notification.Type.SYSTEME,
+            "Compte vérifié ✅" if statut == Justificatif.Statut.ACCEPTE else "Document refusé",
+            "Votre identité a été vérifiée : le badge apparaît sur vos annonces."
+            if statut == Justificatif.Statut.ACCEPTE
+            else f"« {justificatif.get_type_display()} » a été refusé : {motif}",
+        )
+        return Response(AdminJustificatifSerializer(justificatif).data)
+
+
+class AdminJustificatifFichierView(APIView):
+    """Le document n'est jamais exposé publiquement : téléchargement authentifié."""
+
+    permission_classes = ADMIN
+
+    def get(self, request, pk):
+        justificatif = get_object_or_404(Justificatif, pk=pk)
+        return FileResponse(justificatif.fichier.open("rb"))

@@ -374,3 +374,115 @@ class CompteTests(APITestCase):
         self.assertEqual(r.status_code, 204)
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class EvolutionsMobileTests(APITestCase):
+    def setUp(self):
+        self.proprio = User.objects.create_user(
+            "proprio", "proprio@x.tg", "motdepasse123", role="proprietaire",
+            phone="+228 90 11 22 33",
+        )
+        self.locataire = User.objects.create_user(
+            "loc", "loc@x.tg", "motdepasse123", role="locataire"
+        )
+        self.admin = User.objects.create_user(
+            "admin", "admin@x.tg", "motdepasse123", role="admin", is_staff=True
+        )
+
+    def test_connexion_par_telephone(self):
+        r = self.client.post(
+            "/api/v1/auth/login/", {"email": "90 11 22 33", "password": "motdepasse123"}
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data["user"]["email"], "proprio@x.tg")
+        r = self.client.post(
+            "/api/v1/auth/login/", {"email": "99 99 99 99", "password": "motdepasse123"}
+        )
+        self.assertEqual(r.status_code, 401)
+        # Un numéro déjà utilisé est refusé à l'inscription.
+        r = self.client.post(
+            "/api/v1/auth/register/",
+            {"email": "n@x.tg", "password": "motdepasse123", "role": "locataire", "phone": "90112233"},
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_preferences_coupent_les_notifications(self):
+        self.client.force_authenticate(self.locataire)
+        r = self.client.get("/api/v1/auth/preferences/")
+        self.assertTrue(all(r.data.values()))
+        r = self.client.patch("/api/v1/auth/preferences/", {"messages": False}, format="json")
+        self.assertFalse(r.data["messages"])
+        from apps.notifications.services import notifier
+
+        self.locataire.refresh_from_db()
+        self.assertIsNone(notifier(self.locataire, Notification.Type.MESSAGE, "Coucou"))
+        self.assertIsNotNone(notifier(self.locataire, Notification.Type.ALERTE, "Alerte"))
+
+    def test_verification_du_proprietaire(self):
+        self.client.force_authenticate(self.proprio)
+        r = self.client.post(
+            "/api/v1/auth/justificatifs/",
+            {"type": "piece_identite", "fichier": image("cni.jpg")},
+            format="multipart",
+        )
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertNotIn("fichier", r.data)
+        justificatif_id = r.data["id"]
+        r = self.client.post(
+            "/api/v1/auth/justificatifs/",
+            {"type": "autre", "fichier": SimpleUploadedFile("x.exe", b"MZ")},
+            format="multipart",
+        )
+        self.assertEqual(r.status_code, 400)
+
+        # Le fichier n'est accessible qu'à l'admin.
+        r = self.client.get(f"/api/v1/admin/justificatifs/{justificatif_id}/fichier/")
+        self.assertEqual(r.status_code, 403)
+        self.client.force_authenticate(self.admin)
+        r = self.client.get(f"/api/v1/admin/justificatifs/{justificatif_id}/fichier/")
+        self.assertEqual(r.status_code, 200)
+        r = self.client.patch(
+            f"/api/v1/admin/justificatifs/{justificatif_id}/", {"statut": "refuse"}, format="json"
+        )
+        self.assertEqual(r.status_code, 400)
+        r = self.client.patch(
+            f"/api/v1/admin/justificatifs/{justificatif_id}/", {"statut": "accepte"}, format="json"
+        )
+        self.assertEqual(r.data["statut"], "accepte")
+        self.proprio.refresh_from_db()
+        self.assertTrue(self.proprio.verified)
+
+        self.client.force_authenticate(self.proprio)
+        r = self.client.get("/api/v1/auth/justificatifs/")
+        self.assertTrue(r.data["verifie"])
+
+    def test_videos_et_filtre_ids(self):
+        self.client.force_authenticate(self.proprio)
+        r = self.client.post(
+            "/api/v1/mes-logements/",
+            {"titre": "Studio", "type_logement": "studio", "prix": 50000, "ville": "Lomé"},
+            format="json",
+        )
+        logement_id = r.data["id"]
+        r = self.client.post(
+            f"/api/v1/mes-logements/{logement_id}/videos/",
+            {"fichier": SimpleUploadedFile("visite.mp4", b"\x00" * 100, content_type="video/mp4")},
+            format="multipart",
+        )
+        self.assertEqual(r.status_code, 201, r.data)
+        fiche = self.client.get(f"/api/v1/mes-logements/{logement_id}/").data
+        self.assertEqual(len(fiche["videos"]), 1)
+        r = self.client.delete(f"/api/v1/mes-logements/{logement_id}/videos/{fiche['videos'][0]['id']}/")
+        self.assertEqual(r.status_code, 204)
+
+        Logement.objects.filter(pk=logement_id).update(statut="publiee")
+        autre = Logement.objects.create(
+            proprietaire=self.proprio, titre="Autre", type_logement="villa",
+            prix=1, ville="Kara", statut="publiee",
+        )
+        self.client.force_authenticate(None)
+        r = self.client.get("/api/v1/logements/", {"ids": f"{autre.id},{logement_id}"})
+        self.assertEqual(r.data["count"], 2)
+        r = self.client.get("/api/v1/logements/", {"ids": str(autre.id)})
+        self.assertEqual(r.data["count"], 1)

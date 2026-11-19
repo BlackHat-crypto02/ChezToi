@@ -61,6 +61,16 @@ urlpatterns = [
         name="mon-logement-panorama",
     ),
     path(
+        "mes-logements/<int:pk>/videos/",
+        views.VideoUploadView.as_view(),
+        name="mon-logement-videos",
+    ),
+    path(
+        "mes-logements/<int:pk>/videos/<int:video_id>/",
+        views.VideoDetailView.as_view(),
+        name="mon-logement-video",
+    ),
+    path(
         "mes-logements/<int:pk>/<str:action>/",
         views.ChangerStatutView.as_view(),
         name="mon-logement-statut",

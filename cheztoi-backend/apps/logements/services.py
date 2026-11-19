@@ -78,6 +78,10 @@ def filtrer(queryset, params):
     """Applique les filtres de la recherche avancée (dict ou QueryDict)."""
     get = params.get
 
+    identifiants = [i for i in (_entier(v) for v in _liste(get("ids"))) if i]
+    if identifiants:
+        queryset = queryset.filter(pk__in=identifiants[:50])
+
     mots = (get("q") or "").strip()
     if mots:
         for mot in mots.split():

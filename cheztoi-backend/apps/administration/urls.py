@@ -48,6 +48,21 @@ urlpatterns = [
         name="admin-equipement",
     ),
     path(
+        "justificatifs/",
+        views.AdminJustificatifListView.as_view(),
+        name="admin-justificatifs",
+    ),
+    path(
+        "justificatifs/<int:pk>/",
+        views.AdminJustificatifView.as_view(),
+        name="admin-justificatif",
+    ),
+    path(
+        "justificatifs/<int:pk>/fichier/",
+        views.AdminJustificatifFichierView.as_view(),
+        name="admin-justificatif-fichier",
+    ),
+    path(
         "utilisateurs/<int:pk>/",
         views.AdminUtilisateurView.as_view(),
         name="admin-utilisateur",

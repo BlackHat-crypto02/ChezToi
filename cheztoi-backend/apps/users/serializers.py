@@ -36,6 +36,27 @@ def username_depuis_email(email):
     return candidat
 
 
+def chiffres(telephone):
+    return re.sub(r"\D", "", str(telephone or ""))
+
+
+def utilisateur_par_telephone(telephone):
+    """Compte actif dont le numéro correspond (espaces, +, indicatif ignorés).
+
+    Les 8 derniers chiffres suffisent : « 90 11 22 33 » trouve « +228 90 11 22 33 ».
+    """
+    saisis = chiffres(telephone)
+    if len(saisis) < 8:
+        return None
+    fin = saisis[-8:]
+    candidats = [
+        u
+        for u in User.objects.filter(is_active=True).exclude(phone="")
+        if chiffres(u.phone).endswith(fin)
+    ]
+    return candidats[0] if len(candidats) == 1 else None
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     """Inscription publique : locataire ou propriétaire uniquement."""
 
@@ -83,6 +104,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         if User.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError("Cette adresse e-mail est déjà utilisée.")
         return email
+
+    def validate_phone(self, value):
+        telephone = str(value or "").strip()
+        if telephone and utilisateur_par_telephone(telephone) is not None:
+            raise serializers.ValidationError("Ce numéro de téléphone est déjà utilisé.")
+        return telephone
 
     def validate_username(self, value):
         username = str(value).strip()
@@ -199,7 +226,8 @@ class MobileTokenObtainPairSerializer(TokenObtainPairSerializer):
         super().__init__(*args, **kwargs)
         self.fields[self.username_field].required = False
         self.fields[self.username_field].allow_blank = True
-        self.fields["email"] = serializers.EmailField(
+        # E-mail ou numéro de téléphone (« identifiant »).
+        self.fields["email"] = serializers.CharField(
             required=False,
             allow_blank=True,
         )
@@ -208,7 +236,14 @@ class MobileTokenObtainPairSerializer(TokenObtainPairSerializer):
         email = str(attrs.pop("email", "") or "").strip()
         username = str(attrs.get(self.username_field, "") or "").strip()
 
-        if not username and email:
+        if not username and email and "@" not in email:
+            user = utilisateur_par_telephone(email)
+            if user is None:
+                raise AuthenticationFailed(
+                    "Aucun compte n'est associé à ce numéro de téléphone."
+                )
+            attrs[self.username_field] = user.username
+        elif not username and email:
             user = User.objects.filter(email__iexact=email).first()
             if user is None:
                 raise AuthenticationFailed(
@@ -216,7 +251,9 @@ class MobileTokenObtainPairSerializer(TokenObtainPairSerializer):
                 )
             attrs[self.username_field] = user.username
         elif not username:
-            raise AuthenticationFailed("Veuillez saisir votre adresse e-mail.")
+            raise AuthenticationFailed(
+                "Veuillez saisir votre adresse e-mail ou votre téléphone."
+            )
         else:
             attrs[self.username_field] = username
 

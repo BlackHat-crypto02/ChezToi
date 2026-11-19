@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.serializers import UtilisateurPublicSerializer
 
-from .models import Equipement, Logement, Panorama, Photo, RechercheEnregistree
+from .models import Equipement, Logement, Panorama, Photo, RechercheEnregistree, Video
 
 
 def arrondir(valeur):
@@ -28,6 +28,21 @@ class PanoramaSerializer(serializers.ModelSerializer):
         model = Panorama
         fields = ("id", "image", "piece", "ordre")
         read_only_fields = ("id",)
+
+
+class VideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Video
+        fields = ("id", "fichier", "legende")
+        read_only_fields = ("id",)
+
+    def validate_fichier(self, fichier):
+        if fichier.size > 50 * 1024 * 1024:
+            raise serializers.ValidationError("Vidéo trop lourde (50 Mo maximum).")
+        extension = fichier.name.rsplit(".", 1)[-1].lower() if "." in fichier.name else ""
+        if extension not in ("mp4", "mov", "m4v", "webm", "3gp"):
+            raise serializers.ValidationError("Formats acceptés : MP4, MOV, WEBM ou 3GP.")
+        return fichier
 
 
 class LogementResumeSerializer(serializers.ModelSerializer):
@@ -127,6 +142,7 @@ class LogementDetailSerializer(LogementResumeSerializer):
     equipements = EquipementSerializer(many=True, read_only=True)
     photos = PhotoSerializer(many=True, read_only=True)
     panoramas = PanoramaSerializer(many=True, read_only=True)
+    videos = VideoSerializer(many=True, read_only=True)
     proprietaire = UtilisateurPublicSerializer(read_only=True)
     adresse = serializers.SerializerMethodField()
     adresse_visible = serializers.SerializerMethodField()
@@ -151,6 +167,7 @@ class LogementDetailSerializer(LogementResumeSerializer):
             "telephone_proprietaire",
             "photos",
             "panoramas",
+            "videos",
             "proprietaire",
             "motif_refus",
             "modifie_le",

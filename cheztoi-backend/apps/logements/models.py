@@ -146,6 +146,22 @@ class Photo(models.Model):
         ordering = ("-principale", "ordre", "id")
 
 
+class Video(models.Model):
+    """Courte vidéo de présentation du logement."""
+
+    logement = models.ForeignKey(
+        Logement,
+        on_delete=models.CASCADE,
+        related_name="videos",
+    )
+    fichier = models.FileField(upload_to="logements/videos/%Y/%m/")
+    legende = models.CharField(max_length=150, blank=True)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("cree_le", "id")
+
+
 class Panorama(models.Model):
     """Image équirectangulaire d'une pièce pour la visite virtuelle 360°."""
 

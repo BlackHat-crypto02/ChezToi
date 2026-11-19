@@ -15,7 +15,9 @@ from rest_framework import parsers, permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import CodeReinitialisation
+from apps.notifications.services import CATEGORIES
+
+from .models import CodeReinitialisation, Justificatif
 
 User = get_user_model()
 
@@ -214,4 +216,93 @@ class ConfirmationReinitialisationView(APIView):
         demande.save(update_fields=["utilise"])
         return Response(
             {"message": "Mot de passe réinitialisé. Vous pouvez vous connecter."}
+        )
+
+
+class PreferencesView(APIView):
+    """Catégories de notifications activées (toutes par défaut)."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _etat(self, user):
+        prefs = user.preferences_notifications or {}
+        return {categorie: prefs.get(categorie, True) for categorie in CATEGORIES}
+
+    def get(self, request):
+        return Response(self._etat(request.user))
+
+    def patch(self, request):
+        prefs = dict(request.user.preferences_notifications or {})
+        for categorie in CATEGORIES:
+            if categorie in request.data:
+                prefs[categorie] = bool(request.data[categorie])
+        request.user.preferences_notifications = prefs
+        request.user.save(update_fields=["preferences_notifications"])
+        return Response(self._etat(request.user))
+
+
+class JustificatifSerializer(serializers.ModelSerializer):
+    type_libelle = serializers.CharField(source="get_type_display", read_only=True)
+    statut_libelle = serializers.CharField(source="get_statut_display", read_only=True)
+    nom_fichier = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Justificatif
+        fields = (
+            "id",
+            "type",
+            "type_libelle",
+            "fichier",
+            "nom_fichier",
+            "statut",
+            "statut_libelle",
+            "motif",
+            "cree_le",
+            "traite_le",
+        )
+        read_only_fields = ("id", "statut", "motif", "cree_le", "traite_le")
+        extra_kwargs = {"fichier": {"write_only": True}}
+
+    def get_nom_fichier(self, obj):
+        return obj.fichier.name.rsplit("/", 1)[-1] if obj.fichier else ""
+
+    def validate_fichier(self, fichier):
+        if fichier.size > 10 * 1024 * 1024:
+            raise serializers.ValidationError("Fichier trop volumineux (10 Mo maximum).")
+        extension = fichier.name.rsplit(".", 1)[-1].lower() if "." in fichier.name else ""
+        if extension not in ("jpg", "jpeg", "png", "webp", "heic", "pdf"):
+            raise serializers.ValidationError("Formats acceptés : JPG, PNG, WEBP, HEIC ou PDF.")
+        return fichier
+
+
+class JustificatifsView(APIView):
+    """Documents de vérification de l'utilisateur connecté."""
+
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def get(self, request):
+        return Response(
+            {
+                "verifie": request.user.verified,
+                "justificatifs": JustificatifSerializer(
+                    request.user.justificatifs.all(), many=True
+                ).data,
+            }
+        )
+
+    def post(self, request):
+        if request.user.justificatifs.filter(
+            statut=Justificatif.Statut.EN_ATTENTE
+        ).count() >= 5:
+            return Response(
+                {"detail": "Vous avez déjà 5 documents en cours d'examen."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = JustificatifSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        justificatif = serializer.save(user=request.user)
+        return Response(
+            JustificatifSerializer(justificatif).data,
+            status=status.HTTP_201_CREATED,
         )

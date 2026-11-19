@@ -5,7 +5,9 @@ from .compte import (
     ChangerMotDePasseView,
     ConfirmationReinitialisationView,
     DemandeReinitialisationView,
+    JustificatifsView,
     MeView,
+    PreferencesView,
 )
 from .views import (
     AdminInvitationView,
@@ -30,6 +32,8 @@ urlpatterns = [
         RenvoyerInvitationView.as_view(),
         name="admin-user-resend",
     ),
+    path("preferences/", PreferencesView.as_view(), name="preferences"),
+    path("justificatifs/", JustificatifsView.as_view(), name="justificatifs"),
     path("change-password/", ChangerMotDePasseView.as_view(), name="change-password"),
     path("password-reset/", DemandeReinitialisationView.as_view(), name="password-reset"),
     path(
