@@ -147,8 +147,8 @@ class _AccueilState extends State<Accueil> {
                         ),
                         semanticsLabel: 'ChezToi',
                       ),
-                      const Spacer(),
                       if (connecte) ...[
+                        const Spacer(),
                         IconTheme(
                           data: const IconThemeData(color: Colors.white),
                           child: ClocheNotifications(
@@ -174,26 +174,29 @@ class _AccueilState extends State<Accueil> {
                           ),
                         ),
                       ] else
-                        Flexible(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilledButton.icon(
-                              onPressed: () => ouvrirConnexion(context),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Styles.primaire,
-                                minimumSize: const Size(0, 40),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilledButton.icon(
+                                onPressed: () => ouvrirConnexion(context),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Styles.primaire,
+                                  minimumSize: const Size(0, 40),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                  ),
                                 ),
-                              ),
-                              icon: const Icon(
-                                RemixIcons.user_3_line,
-                                size: 18,
-                              ),
-                              label: const Text(
-                                'Se connecter',
-                                overflow: TextOverflow.ellipsis,
+                                icon: const Icon(
+                                  RemixIcons.user_3_line,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  'Se connecter',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ),
                           ),
@@ -708,13 +711,15 @@ class _Categorie extends StatelessWidget {
               child: Icon(icone, color: Styles.primaire, size: 28),
             ),
             const SizedBox(height: 8),
-            Text(
-              libelle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                libelle,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             Text(
@@ -756,11 +761,11 @@ class _Raccourci extends StatelessWidget {
             children: [
               Icon(icone, color: Styles.primaire, size: 24),
               const SizedBox(height: 8),
-              Flexible(
+              FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Text(
                   label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 12,

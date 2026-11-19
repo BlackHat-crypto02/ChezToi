@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:cheztoi/models/modeles.dart';
@@ -97,6 +98,79 @@ class _CarteState extends State<Carte> {
     return '$prix';
   }
 
+  /// Regroupe les logements à moins de 56 px les uns des autres à l'écran
+  /// (cahier des charges 4.5 : « regroupement des marqueurs proches »).
+  List<Marker> _marqueursGroupes(MapCamera camera, List<Logement> logements) {
+    final groupes = <(Offset, List<Logement>)>[];
+    for (final l in logements) {
+      final point = camera.projectAtZoom(LatLng(l.latitude!, l.longitude!));
+      final index = groupes.indexWhere((g) => (g.$1 - point).distance < 56);
+      if (index == -1) {
+        groupes.add((point, [l]));
+      } else {
+        groupes[index].$2.add(l);
+      }
+    }
+    return [
+      for (final (_, membres) in groupes)
+        membres.length == 1 ? _marqueur(membres.first) : _groupe(membres),
+    ];
+  }
+
+  Marker _groupe(List<Logement> membres) {
+    final latitudes = membres.map((l) => l.latitude!);
+    final longitudes = membres.map((l) => l.longitude!);
+    final limites = LatLngBounds(
+      LatLng(latitudes.reduce(math.min), longitudes.reduce(math.min)),
+      LatLng(latitudes.reduce(math.max), longitudes.reduce(math.max)),
+    );
+    final taille = membres.length < 10 ? 42.0 : 50.0;
+    return Marker(
+      point: limites.center,
+      width: taille,
+      height: taille,
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _selection = null);
+          if (limites.northEast == limites.southWest) {
+            _carte.move(limites.center, _carte.camera.zoom + 2);
+          } else {
+            _carte.fitCamera(
+              CameraFit.bounds(
+                bounds: limites,
+                padding: const EdgeInsets.all(70),
+                maxZoom: 17,
+              ),
+            );
+          }
+        },
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Styles.primaireFonce,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Styles.primaire.withValues(alpha: 0.35),
+                blurRadius: 0,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Text(
+            '${membres.length}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Marker _marqueur(Logement l) {
     final choisi = _selection?.id == l.id;
     return Marker(
@@ -161,8 +235,14 @@ class _CarteState extends State<Carte> {
                     ),
                   ],
                 ),
-              MarkerLayer(
-                markers: [for (final l in geolocalises) _marqueur(l)],
+              // Regroupement recalculé à chaque mouvement de caméra.
+              Builder(
+                builder: (context) => MarkerLayer(
+                  markers: _marqueursGroupes(
+                    MapCamera.of(context),
+                    geolocalises,
+                  ),
+                ),
               ),
             ],
           ),

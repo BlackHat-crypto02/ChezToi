@@ -18,7 +18,8 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="ChezToi : trouvez, visitez et réservez votre logement au Togo.">
+  <meta name="theme-color" content="#0F766E">
 
   <!--
     Uncomment the tag below to lay the app out underneath the parts of the
@@ -41,10 +42,34 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>cheztoi</title>
+  <title>ChezToi</title>
   <link rel="manifest" href="manifest.json">
 </head>
-<body>
+<body style="margin:0;background:#053B37">
+  <style id="cheztoi-chargement">
+    /* Écran d'attente du moteur Flutter, aux couleurs du démarrage animé. */
+    #chargement {
+      position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; background: linear-gradient(#0A4F49, #053B37, #021E1C);
+    }
+    #chargement span {
+      width: 120px; height: 3px; border-radius: 3px; overflow: hidden;
+      background: rgba(255,255,255,.12); position: relative;
+    }
+    #chargement span::after {
+      content: ""; position: absolute; inset: 0; width: 40%;
+      background: #5EEAD4; animation: va 1.1s ease-in-out infinite;
+    }
+    @keyframes va { from { transform: translateX(-100%) } to { transform: translateX(250%) } }
+  </style>
+  <div id="chargement" aria-label="Chargement de ChezToi"><span></span></div>
+  <script>
+    // Retire l'écran d'attente dès que Flutter dessine sa première image.
+    window.addEventListener("flutter-first-frame", function () {
+      var e = document.getElementById("chargement");
+      if (e) e.remove();
+    });
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
